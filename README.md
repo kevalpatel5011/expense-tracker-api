@@ -71,3 +71,24 @@ curl "http://127.0.0.1:5000/expenses?min_amount=100&max_amount=2000"
 | GET | `/reports/categories` | Get category summary report |
 | GET | `/reports/categories/<year>` | Get yearly category report |
 | GET | `/reports/categories/<year>/<month>` | Get monthly category report |
+
+
+## Example Create Expense Request
+
+```bash
+curl -X POST http://127.0.0.1:5000/expenses \
+-H "Content-Type: application/json" \
+-d '{"expense_id":120,"title":"internet","amount":80,"category":"utility","date":"2026-06-22"}'
+```
+
+Example response:
+
+```json
+{
+  "amount": 80,
+  "category": "utility",
+  "date": "2026-06-22",
+  "expense_id": 120,
+  "title": "internet"
+}
+```
