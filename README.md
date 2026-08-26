@@ -92,3 +92,12 @@ Example response:
   "title": "internet"
 }
 ```
+
+
+## Technologies Used
+
+- Python
+- Flask
+- unittest
+- JSON file storage
+- Git and GitHub
