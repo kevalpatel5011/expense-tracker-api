@@ -116,3 +116,11 @@ Current test result:
 Ran 80 tests
 
 OK
+
+## Future Improvements
+
+- Add database support with SQLite or PostgreSQL
+- Add user authentication
+- Add API documentation with Swagger/OpenAPI
+- Add Docker support
+- Add deployment configuration
