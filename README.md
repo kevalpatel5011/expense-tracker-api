@@ -4,6 +4,10 @@ GitHub Repository: https://github.com/kevalpatel5011/expense-tracker-api
 
 A Flask-based REST API for managing expenses with JSON file persistence.
 
+## Portfolio Summary
+
+This project demonstrates backend API development using Python and Flask. It includes RESTful routes, JSON request handling, input validation, filtering, sorting, pagination, report generation, file-based persistence, unit testing, and Git/GitHub version control.
+
 ## Features
 
 - Add, view, update, and delete expenses
