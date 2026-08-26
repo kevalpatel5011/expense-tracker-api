@@ -1,5 +1,7 @@
 # Expense Tracker API
 
+GitHub Repository: https://github.com/kevalpatel5011/expense-tracker-api
+
 A Flask-based REST API for managing expenses with JSON file persistence.
 
 ## Features
