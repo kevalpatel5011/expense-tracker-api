@@ -32,6 +32,15 @@ expense tracker/
     └── test_expense_tracker.py
 ```
 
+
+## Technologies Used
+
+- Python
+- Flask
+- unittest
+- JSON file storage
+- Git and GitHub
+
 ## Run The App
 
 ```bash
@@ -97,11 +106,13 @@ Example response:
 }
 ```
 
+## Test Status
 
-## Technologies Used
+The project includes unit tests for both the core expense tracker logic and Flask API routes.
 
-- Python
-- Flask
-- unittest
-- JSON file storage
-- Git and GitHub
+Current test result:
+
+```text
+Ran 80 tests
+
+OK
