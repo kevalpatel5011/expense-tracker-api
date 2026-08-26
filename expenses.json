@@ -1,0 +1,23 @@
+[
+    {
+        "expense_id": 100,
+        "title": "rent",
+        "amount": 1900,
+        "category": "housing",
+        "date": "2026-07-01"
+    },
+    {
+        "expense_id": 101,
+        "title": "bills",
+        "amount": 100,
+        "category": "utility",
+        "date": "2026-06-10"
+    },
+    {
+        "expense_id": 110,
+        "title": "insurance",
+        "amount": 1000,
+        "category": "housing",
+        "date": "2026-06-20"
+    }
+]

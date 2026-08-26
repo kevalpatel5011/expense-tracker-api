@@ -1,0 +1,16 @@
+# Virtual environment
+.venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Test/cache files
+.pytest_cache/
+.coverage
+
+# macOS files
+.DS_Store
+
+# Local test data
+test_expenses.json
