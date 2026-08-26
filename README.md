@@ -27,11 +27,12 @@ expense tracker/
 ├── expense_utils.py
 ├── Expense_Tracker_System.py
 ├── expenses.json
+├── requirements.txt
+├── README.md
 └── tests/
     ├── test_app.py
     └── test_expense_tracker.py
 ```
-
 
 ## Technologies Used
 
@@ -85,7 +86,6 @@ curl "http://127.0.0.1:5000/expenses?min_amount=100&max_amount=2000"
 | GET | `/reports/categories/<year>` | Get yearly category report |
 | GET | `/reports/categories/<year>/<month>` | Get monthly category report |
 
-
 ## Example Create Expense Request
 
 ```bash
@@ -116,7 +116,7 @@ Current test result:
 Ran 80 tests
 
 OK
-
+```
 
 ## Future Improvements
 
