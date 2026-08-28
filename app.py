@@ -3,7 +3,6 @@ import sqlite3
 from flask import Flask, jsonify, request
 
 from Expense_Tracker_System import  ExpenseTracker
-from config import EXPENSE_FILE
 from expense_utils import (
     validate_required_fields,
     validate_allowed_fields,
@@ -32,8 +31,6 @@ from expense_repository import (
 
 app = Flask(__name__)
 
-admin = ExpenseTracker()
-admin.load_expenses_from_json(EXPENSE_FILE)
 
 # Helper functions
 def error_response(message, status_code):
@@ -54,6 +51,15 @@ def parse_amount(value):
         return float(value), None
     except ValueError:
         return None, error_response("min_amount and max_amount must be numbers", 400)
+
+
+def build_tracker_from_database():
+    manager = ExpenseTracker()
+    all_expenses = get_all_expenses()
+    for expense in all_expenses:
+        expense_obj = create_expense_from_data(expense)
+        manager.add_expense(expense_obj)
+    return manager
 
 
 # Basic routes
@@ -161,12 +167,13 @@ def expenses():
 
 @app.route("/expenses/summary")
 def get_expense_summary():
+    manager = build_tracker_from_database()
     return jsonify({
-        "count": admin.get_expense_count(),
-        "total_amount": admin.get_total_expense_amount(),
-        "average_amount": admin.get_average_expense_amount(),
-        "highest_expense": admin.get_highest_expense(),
-        "lowest_expense": admin.get_lowest_expense(),
+        "count": manager.get_expense_count(),
+        "total_amount": manager.get_total_expense_amount(),
+        "average_amount": manager.get_average_expense_amount(),
+        "highest_expense": manager.get_highest_expense(),
+        "lowest_expense": manager.get_lowest_expense(),
     })
 
 
@@ -181,13 +188,15 @@ def get_expense_by_id(expense_id):
 
 @app.route("/expenses/category/<category>")
 def expenses_by_category(category):
-    result = admin.get_expenses_by_category(category)
+    manager = build_tracker_from_database()
+    result = manager.get_expenses_by_category(category)
     return jsonify(result)
 
 
 @app.route("/expenses/date/<date>")
 def expenses_by_date(date):
-    result = admin.get_expenses_by_date(date)
+    manager = build_tracker_from_database()
+    result = manager.get_expenses_by_date(date)
     return jsonify(result)
 
 
@@ -246,7 +255,7 @@ def replace_expense(expense_id):
 # Report routes
 @app.route("/reports/categories")
 def get_report_by_category():
-    all_expenses = admin.get_all_expense_details()
+    all_expenses = get_all_expenses()
     if not all_expenses:
         return jsonify({})
     summary = build_category_summary(all_expenses)
@@ -255,23 +264,27 @@ def get_report_by_category():
 
 @app.route("/reports/categories/<int:year>/<int:month>")
 def get_monthly_category_report(year, month):
-    return jsonify(admin.get_category_report_by_month(year, month))
+    manager = build_tracker_from_database()
+    return jsonify(manager.get_category_report_by_month(year, month))
 
 
 @app.route("/reports/categories/<int:year>")
 def get_yearly_category_report(year):
-    return jsonify(admin.get_category_report_by_year(year))
+    manager = build_tracker_from_database()
+    return jsonify(manager.get_category_report_by_year(year))
 
 
 @app.route("/reports/monthly/<int:year>/<int:month>")
 def get_monthly_report(year, month):
-    result = admin.get_monthly_report(year, month)
+    manager = build_tracker_from_database()
+    result = manager.get_monthly_report(year, month)
     return jsonify(result)
 
 
 @app.route("/reports/yearly/<int:year>")
 def get_yearly_report(year):
-    result = admin.get_yearly_report(year)
+    manager = build_tracker_from_database()
+    result = manager.get_yearly_report(year)
     return jsonify(result)
 
 
