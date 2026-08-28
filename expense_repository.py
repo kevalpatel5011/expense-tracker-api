@@ -106,4 +106,3 @@ def update_expense_by_id(expense_id, expense):
         raise
     finally:
         connection.close()
-

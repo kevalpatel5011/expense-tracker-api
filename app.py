@@ -1,10 +1,12 @@
+import sqlite3
+
 from flask import Flask, jsonify, request
+
 from Expense_Tracker_System import  ExpenseTracker
+from config import EXPENSE_FILE
 from expense_utils import (
     validate_required_fields,
     validate_allowed_fields,
-    backup_expense,
-    restore_expense,
     apply_expense_updates,
     create_expense_from_data,
     filter_by_category,
@@ -19,7 +21,14 @@ from expense_utils import (
     ALLOWED_UPDATE_FIELDS,
     ALLOWED_SORT_FIELDS,
 )
-from config import EXPENSE_FILE
+from expense_repository import (
+    get_all_expenses,
+    get_expense_by_id as get_expense_by_id_from_db,
+    insert_expense,
+    delete_expense_by_id as delete_expense_by_id_from_db,
+    update_expense_by_id as update_expense_by_id_in_db,
+)
+
 
 app = Flask(__name__)
 
@@ -38,10 +47,6 @@ def get_json_body():
     if data is None:
         return None, error_response("JSON body is required", 400)
     return data, None
-
-
-def save_expenses():
-    admin.save_expenses_to_json(EXPENSE_FILE)
 
 
 def parse_amount(value):
@@ -69,7 +74,7 @@ def health():
 @app.route("/expenses", methods=["GET", "POST"])
 def expenses():
     if request.method == "GET":
-        result = admin.get_all_expense_details()
+        result = get_all_expenses()
 
         category = request.args.get("category")
         min_amount = request.args.get("min_amount")
@@ -145,11 +150,13 @@ def expenses():
         if missing_field:
             return error_response(f"Missing field: {missing_field}", 400)
         expense = create_expense_from_data(data)
-        result = admin.add_expense(expense)
-        if result:
-            save_expenses()
-            return jsonify(expense.get_details()), 201
-        return error_response("Invalid expense", 400)
+        if not expense.is_valid():
+            return error_response("Invalid expense", 400)
+        try:
+            insert_expense(expense.get_details())
+        except sqlite3.IntegrityError:
+            return error_response("Invalid expense", 400)
+        return jsonify(expense.get_details()), 201
 
 
 @app.route("/expenses/summary")
@@ -165,9 +172,9 @@ def get_expense_summary():
 
 @app.route("/expenses/<int:expense_id>")
 def get_expense_by_id(expense_id):
-    result = admin.find_expense_by_id(expense_id)
-    if result:
-        return jsonify(result.get_details())
+    result = get_expense_by_id_from_db(expense_id)
+    if result is not None:
+        return jsonify(result)
     
     return error_response("Expense not found", 404)
 
@@ -186,55 +193,54 @@ def expenses_by_date(date):
 
 @app.route("/expenses/<int:expense_id>", methods=["DELETE"])
 def delete_expense(expense_id):
-    remove = admin.remove_expense_by_id(expense_id)
+    remove = delete_expense_by_id_from_db(expense_id)
     if remove:
-        save_expenses()
         return jsonify({
             "message": "Expense deleted successfully"
-        })
+        }), 200
     return error_response("Expense not found", 404)
 
 
 @app.route("/expenses/<int:expense_id>", methods=["PATCH"])
 def patch_expense(expense_id):
-    found = admin.find_expense_by_id(expense_id)
-    if not found:
+    stored_expense = get_expense_by_id_from_db(expense_id)
+    if stored_expense is None:
         return error_response("Expense not found", 404)
     data, error = get_json_body()
     if error:
         return error
-    
     invalid_field = validate_allowed_fields(data, ALLOWED_UPDATE_FIELDS)
     if invalid_field:
         return error_response(f"Invalid field: {invalid_field}", 400)
-    old_data = backup_expense(found)
-    apply_expense_updates(found, data)
-    if not found.is_valid():
-        restore_expense(found, old_data)
+    expense = create_expense_from_data(stored_expense)
+    apply_expense_updates(expense, data)
+    if not expense.is_valid():
         return error_response("Invalid expense", 400)
-    save_expenses()
-    return jsonify(found.get_details())
+    updated = update_expense_by_id_in_db(expense_id, expense.get_details())
+    if not updated:
+        return error_response("Expense not found", 404)
+    return jsonify(expense.get_details())
 
 
 @app.route("/expenses/<int:expense_id>", methods=["PUT"])
 def replace_expense(expense_id):
-    found = admin.find_expense_by_id(expense_id)
-    if not found:
+    stored_expense = get_expense_by_id_from_db(expense_id)
+    if stored_expense is None:
         return error_response("Expense not found", 404)
     data, error = get_json_body()
     if error:
         return error
-
     missing_field = validate_required_fields(data, REQUIRED_UPDATE_FIELDS)
     if missing_field:
         return error_response(f"Missing field: {missing_field}", 400)
-    old_data = backup_expense(found)
-    apply_expense_updates(found, data)
-    if not found.is_valid():
-        restore_expense(found, old_data)
+    expense = create_expense_from_data(stored_expense)
+    apply_expense_updates(expense, data)
+    if not expense.is_valid():
         return error_response("Invalid expense", 400)
-    save_expenses()
-    return jsonify(found.get_details())
+    updated = update_expense_by_id_in_db(expense_id, expense.get_details())
+    if not updated:
+        return error_response("Expense not found", 404)
+    return jsonify(expense.get_details())
 
 
 # Report routes
