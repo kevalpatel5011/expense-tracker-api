@@ -1,6 +1,8 @@
 import unittest
 import json
 import os
+import tempfile
+from unittest.mock import patch
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -9,6 +11,8 @@ TEST_EXPENSE_FILE = str(BASE_DIR / "test_expenses.json")
 os.environ["EXPENSE_FILE"] = TEST_EXPENSE_FILE
 # Set test file before importing app because app reads EXPENSE_FILE at import time.
 from app import app, admin
+from database import init_db
+from expense_repository import insert_expense
 
 
 class TestApp(unittest.TestCase):
@@ -37,7 +41,13 @@ class TestApp(unittest.TestCase):
                 "date": "2026-06-20"
             }
         ]
-
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.test_db_path = str(Path(self.temp_dir.name) / "test_expenses.db")
+        self.db_patcher = patch("database.DATABASE_FILE", self.test_db_path)
+        self.db_patcher.start()
+        init_db()
+        for expense in test_data:
+            insert_expense(expense)
         with open(TEST_EXPENSE_FILE, "w") as file:
             json.dump(test_data, file, indent=4)
         admin.expenses = []
@@ -46,6 +56,8 @@ class TestApp(unittest.TestCase):
     def tearDown(self):
         if os.path.exists(TEST_EXPENSE_FILE):
             os.remove(TEST_EXPENSE_FILE)
+        self.db_patcher.stop()
+        self.temp_dir.cleanup()
 
     def make_expense(self, expense_id, amount=100):
         return {
