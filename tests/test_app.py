@@ -587,19 +587,6 @@ class TestApp(unittest.TestCase):
         data = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data, "Expense Tracker API is running")
-        
-
-
-        
-
-
-
-
-
-
-
-        
-
 
 
 if __name__ == "__main__":
