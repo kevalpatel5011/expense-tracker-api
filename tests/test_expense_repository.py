@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+import sqlite3
 from pathlib import Path
 from unittest.mock import patch
 
@@ -124,6 +125,20 @@ class TestExpenseRepository(unittest.TestCase):
         stored_expense = get_expense_by_id(expense["expense_id"])
         self.assertFalse(delete_result)
         self.assertEqual(stored_expense, expense)
+
+    def test_insert_duplicate_id_raises_integrity_error(self):
+        expense = {
+            "expense_id": 2200,
+            "title": "hospital fees",
+            "amount": 240.0,
+            "category": "medical",
+            "date": "2026-08-21"
+            }
+        insert_expense(expense)
+        with self.assertRaises(sqlite3.IntegrityError):
+            insert_expense(expense)
+        result = get_expense_by_id(expense["expense_id"])
+        self.assertEqual(result, expense)
 
 
 
