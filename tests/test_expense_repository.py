@@ -141,7 +141,5 @@ class TestExpenseRepository(unittest.TestCase):
         self.assertEqual(result, expense)
 
 
-
-
 if __name__ == "__main__":
     unittest.main()
