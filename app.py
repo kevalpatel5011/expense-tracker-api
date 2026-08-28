@@ -27,6 +27,7 @@ from expense_repository import (
     delete_expense_by_id as delete_expense_by_id_from_db,
     update_expense_by_id as update_expense_by_id_in_db,
 )
+from database import init_db
 
 
 app = Flask(__name__)
@@ -289,4 +290,5 @@ def get_yearly_report(year):
 
 
 if __name__ == "__main__":
+    init_db()
     app.run(debug=True)
