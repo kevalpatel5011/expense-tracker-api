@@ -2,7 +2,7 @@ import sqlite3
 
 from flask import Flask, jsonify, request
 
-from Expense_Tracker_System import  ExpenseTracker
+from Expense_Tracker_System import ExpenseTracker
 from expense_utils import (
     validate_required_fields,
     validate_allowed_fields,

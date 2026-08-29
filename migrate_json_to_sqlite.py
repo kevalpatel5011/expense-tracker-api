@@ -12,7 +12,7 @@ def load_json_expenses():
     if not isinstance(data, list):
         raise ValueError("JSON data must be a list")
     return data
-    
+
 
 def migrate_expenses():
     init_db()

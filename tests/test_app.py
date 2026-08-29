@@ -3,7 +3,6 @@ import tempfile
 from unittest.mock import patch
 from pathlib import Path
 
-# Set test file before importing app because app reads EXPENSE_FILE at import time.
 from app import app
 from database import init_db
 from expense_repository import insert_expense

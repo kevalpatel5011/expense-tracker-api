@@ -21,7 +21,7 @@ def init_db():
             date TEXT NOT NULL
         )
     ''')
-    
+
     connection.commit()
     connection.close()
 
