@@ -1,14 +1,11 @@
 import unittest
-import json
-import os
+import tempfile
+from unittest.mock import patch
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent
-TEST_EXPENSE_FILE = str(BASE_DIR / "test_expenses.json")
-
-os.environ["EXPENSE_FILE"] = TEST_EXPENSE_FILE
-# Set test file before importing app because app reads EXPENSE_FILE at import time.
-from app import app, admin
+from app import app
+from database import init_db
+from expense_repository import insert_expense
 
 
 class TestApp(unittest.TestCase):
@@ -37,15 +34,17 @@ class TestApp(unittest.TestCase):
                 "date": "2026-06-20"
             }
         ]
-
-        with open(TEST_EXPENSE_FILE, "w") as file:
-            json.dump(test_data, file, indent=4)
-        admin.expenses = []
-        admin.load_expenses_from_json(TEST_EXPENSE_FILE)
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.test_db_path = str(Path(self.temp_dir.name) / "test_expenses.db")
+        self.db_patcher = patch("database.DATABASE_FILE", self.test_db_path)
+        self.db_patcher.start()
+        init_db()
+        for expense in test_data:
+            insert_expense(expense)
 
     def tearDown(self):
-        if os.path.exists(TEST_EXPENSE_FILE):
-            os.remove(TEST_EXPENSE_FILE)
+        self.db_patcher.stop()
+        self.temp_dir.cleanup()
 
     def make_expense(self, expense_id, amount=100):
         return {
@@ -587,19 +586,6 @@ class TestApp(unittest.TestCase):
         data = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data, "Expense Tracker API is running")
-        
-
-
-        
-
-
-
-
-
-
-
-        
-
 
 
 if __name__ == "__main__":
