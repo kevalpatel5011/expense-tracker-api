@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+
 class Expense:
 
     def __init__(self, expense_id, title, amount, category, date):
@@ -31,7 +32,7 @@ class Expense:
         if not (isinstance(self.date, str) and self.date.strip() != ""):
             return False
         try:
-            datetime.strptime(self.date, "%Y-%m-%d")
+            datetime.strptime(self.date, "%Y-%m-%d") # noqa: DTZ007
         except ValueError:
             return False
         return True
@@ -70,9 +71,7 @@ class ExpenseTracker:
 
     def expense_exists(self, expense_id) -> bool:
         found = self.find_expense_by_id(expense_id)
-        if not found:
-            return False
-        return True
+        return found is not None
 
     def get_expense_details_by_id(self, expense_id) -> dict | None:
         found = self.find_expense_by_id(expense_id)
@@ -194,9 +193,7 @@ class ExpenseTracker:
         return all_categories
 
     def has_expenses(self) -> bool:
-        if not self.expenses:
-            return False
-        return True
+        return bool(self.expenses)
 
     def get_average_expense_amount(self) -> int | float:
         if not self.has_expenses():
@@ -353,12 +350,7 @@ class ExpenseTracker:
         if not (isinstance(filename, str) and filename.strip() != ""):
             return True
         lines = self.count_expenses_in_file(filename)
-        if lines == 0:
-            return True
-        if lines >= 1:
-            return False
-        else:
-            return True
+        return lines == 0
 
     def append_expense_to_file(self, filename, expense) -> bool:
         if not (isinstance(filename, str) and filename.strip() != ""):
@@ -379,7 +371,7 @@ class ExpenseTracker:
         if not (isinstance(filename, str) and filename.strip() != ""):
             return False
         try:
-            with open(filename, "w") as file:
+            with open(filename, "w"):
                 return True
         except OSError:
             return False
@@ -414,8 +406,7 @@ class ExpenseTracker:
                         expense = Expense(int(parts[0]), (parts[1]), float(parts[2]), parts[3], parts[4])
                     except ValueError:
                         continue
-                    if expense.is_valid():
-                        if self.add_expense(expense):
+                    if expense.is_valid() and self.add_expense(expense):
                             count += 1
                 return count
         except OSError:
@@ -518,8 +509,8 @@ class ExpenseTracker:
         if not (isinstance(end_date, str) and end_date.strip() != ""):
             return []
         try:
-            datetime.strptime(start_date, "%Y-%m-%d")
-            datetime.strptime(end_date, "%Y-%m-%d")
+            datetime.strptime(start_date, "%Y-%m-%d") # noqa: DTZ007
+            datetime.strptime(end_date, "%Y-%m-%d") # noqa: DTZ007
             if start_date > end_date:
                 return []
             result = []
@@ -686,7 +677,7 @@ class ExpenseTracker:
         if not (isinstance(date, str) and date.strip() != ""):
             return 0
         try:
-            datetime.strptime(date, "%Y-%m-%d")
+            datetime.strptime(date, "%Y-%m-%d") # noqa: DTZ007
             count = 0
             unmatch = []
             for expense in self.expenses:

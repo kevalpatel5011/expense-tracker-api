@@ -1,7 +1,9 @@
-import unittest
-from Expense_Tracker_System import Expense, ExpenseTracker
 import os
 import tempfile
+import unittest
+
+from Expense_Tracker_System import Expense, ExpenseTracker
+
 
 class TestExpenseTracker(unittest.TestCase):
     def setUp(self):

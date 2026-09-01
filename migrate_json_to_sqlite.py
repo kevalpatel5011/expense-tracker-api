@@ -10,7 +10,7 @@ def load_json_expenses():
     with open(EXPENSE_FILE, "r", encoding="utf-8") as file:
         data = json.load(file)
     if not isinstance(data, list):
-        raise ValueError("JSON data must be a list")
+        raise TypeError("JSON data must be a list")
     return data
 
 
