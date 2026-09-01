@@ -66,6 +66,6 @@ class TestMigration(unittest.TestCase):
         }
         with open(self.json_path, "w", encoding="utf-8") as file:
             json.dump(invalid_data, file)
-        with self.assertRaisesRegex(ValueError, "JSON data must be a list"):
+        with self.assertRaisesRegex(TypeError, "JSON data must be a list"):
             migrate_expenses()
         self.assertEqual(get_all_expenses(), [])

@@ -1,11 +1,18 @@
+import sqlite3
 import tempfile
 import unittest
-import sqlite3
 from pathlib import Path
 from unittest.mock import patch
 
 from database import init_db
-from expense_repository import (get_all_expenses, get_expense_by_id, insert_expense, delete_expense_by_id, update_expense_by_id)
+from expense_repository import (
+    delete_expense_by_id,
+    get_all_expenses,
+    get_expense_by_id,
+    insert_expense,
+    update_expense_by_id,
+)
+
 
 class TestExpenseRepository(unittest.TestCase):
     def setUp(self):
