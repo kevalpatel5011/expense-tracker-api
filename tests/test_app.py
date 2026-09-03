@@ -1,11 +1,9 @@
-import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import patch
 
 from app import app
-from database import init_db
-from expense_repository import insert_expense
+from postgres_database import get_postgres_connection, init_postgres_db
+from postgres_expense_repository import insert_expense
 
 
 class TestApp(unittest.TestCase):
@@ -34,17 +32,23 @@ class TestApp(unittest.TestCase):
                 "date": "2026-06-20"
             }
         ]
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.test_db_path = str(Path(self.temp_dir.name) / "test_expenses.db")
-        self.db_patcher = patch("database.DATABASE_FILE", self.test_db_path)
-        self.db_patcher.start()
-        init_db()
+        self.database_patcher = patch(
+            "postgres_database.POSTGRES_DATABASE",
+            "expense_tracker_test",
+        )
+        self.database_patcher.start()
+
+        init_postgres_db()
+
+        with get_postgres_connection() as connection:
+            connection.execute("TRUNCATE TABLE expenses")
         for expense in test_data:
             insert_expense(expense)
 
     def tearDown(self):
-        self.db_patcher.stop()
-        self.temp_dir.cleanup()
+        with get_postgres_connection() as connection:
+            connection.execute("TRUNCATE TABLE expenses")
+        self.database_patcher.stop()
 
     def make_expense(self, expense_id, amount=100):
         return {
