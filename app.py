@@ -1,21 +1,6 @@
-import sqlite3
-
+import psycopg
 from flask import Flask, jsonify, request
 
-from database import init_db
-from expense_repository import (
-    delete_expense_by_id as delete_expense_by_id_from_db,
-)
-from expense_repository import (
-    get_all_expenses,
-    insert_expense,
-)
-from expense_repository import (
-    get_expense_by_id as get_expense_by_id_from_db,
-)
-from expense_repository import (
-    update_expense_by_id as update_expense_by_id_in_db,
-)
 from Expense_Tracker_System import ExpenseTracker
 from expense_utils import (
     ALLOWED_SORT_FIELDS,
@@ -33,6 +18,20 @@ from expense_utils import (
     sort_expenses,
     validate_allowed_fields,
     validate_required_fields,
+)
+from postgres_database import init_postgres_db
+from postgres_expense_repository import (
+    delete_expense_by_id as delete_expense_by_id_from_db,
+)
+from postgres_expense_repository import (
+    get_all_expenses,
+    insert_expense,
+)
+from postgres_expense_repository import (
+    get_expense_by_id as get_expense_by_id_from_db,
+)
+from postgres_expense_repository import (
+    update_expense_by_id as update_expense_by_id_in_db,
 )
 
 app = Flask(__name__)
@@ -166,7 +165,7 @@ def expenses():
             return error_response("Invalid expense", 400)
         try:
             insert_expense(expense.get_details())
-        except sqlite3.IntegrityError:
+        except psycopg.IntegrityError:
             return error_response("Invalid expense", 400)
         return jsonify(expense.get_details()), 201
 
@@ -295,5 +294,5 @@ def get_yearly_report(year):
 
 
 if __name__ == "__main__":
-    init_db()
+    init_postgres_db()
     app.run(debug=True)
