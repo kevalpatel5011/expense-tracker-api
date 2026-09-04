@@ -17,3 +17,6 @@ test_expenses.json
 
 # Database file
 expenses.db
+
+# Locat database password
+.env
