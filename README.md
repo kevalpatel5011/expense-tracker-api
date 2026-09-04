@@ -25,6 +25,7 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Use automatic commit, rollback, and connection cleanup
 * Run isolated PostgreSQL integration tests
 * Apply migrations and run quality checks through GitHub Actions
+* Reuse PostgreSQL connections through a connection pool
 
 ## Project Structure
 
@@ -59,6 +60,7 @@ expense-tracker-api/
     ├── test_expense_repository.py
     ├── test_expense_tracker.py
     ├── test_migration.py
+    ├── test_postgres_database.py
     └── test_postgres_expense_repository.py
 ```
 
@@ -72,6 +74,7 @@ The SQLite repository and JSON-to-SQLite migration files are retained as previou
 * Flask
 * PostgreSQL 18
 * Psycopg 3
+* Psycopg connection pooling
 * Alembic
 * SQLAlchemy migration operations
 * SQL
@@ -372,6 +375,7 @@ The automated test suite covers:
 * PostgreSQL repository CRUD operations
 * PostgreSQL database constraints
 * Alembic schema migration setup
+* PostgreSQL connection-pool creation, borrowing, and cleanup
 * Duplicate-ID rollback behavior
 * Test database isolation
 * JSON-to-SQLite migration behavior
@@ -379,7 +383,7 @@ The automated test suite covers:
 Current local test result:
 
 ```text
-Ran 102 tests
+Ran 105 tests
 
 OK
 ```
