@@ -19,7 +19,6 @@ from expense_utils import (
     validate_allowed_fields,
     validate_required_fields,
 )
-from postgres_database import init_postgres_db
 from postgres_expense_repository import (
     delete_expense_by_id as delete_expense_by_id_from_db,
 )
@@ -294,5 +293,4 @@ def get_yearly_report(year):
 
 
 if __name__ == "__main__":
-    init_postgres_db()
     app.run(debug=True)

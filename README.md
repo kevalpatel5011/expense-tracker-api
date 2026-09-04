@@ -2,16 +2,17 @@
 
 GitHub Repository: https://github.com/kevalpatel5011/expense-tracker-api
 
-A Flask REST API for managing expenses with PostgreSQL database persistence.
+A Flask REST API for managing expenses with PostgreSQL persistence and Alembic database migrations.
 
 ## Portfolio Summary
 
-This project demonstrates backend API development using Python, Flask, PostgreSQL, and Psycopg. It includes RESTful routes, JSON request handling, input validation, filtering, sorting, pagination, reporting, parameterized SQL queries, database transactions, automated testing, code-quality checks, and continuous integration with GitHub Actions.
+This project demonstrates backend API development using Python, Flask, PostgreSQL, Psycopg, and Alembic. It includes RESTful routes, JSON request handling, input validation, filtering, sorting, pagination, reporting, parameterized SQL queries, database transactions, version-controlled schema migrations, automated testing, code-quality checks, and continuous integration with GitHub Actions.
 
 ## Features
 
 * Add, view, update, and delete expenses
 * Store expense data in PostgreSQL
+* Manage database schema changes with Alembic
 * Filter expenses by category, amount range, and date range
 * Sort expenses by amount, date, title, or category
 * Paginate results using limit and offset
@@ -23,7 +24,7 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Reject negative amounts with a database check constraint
 * Use automatic commit, rollback, and connection cleanup
 * Run isolated PostgreSQL integration tests
-* Run Ruff and all automated tests through GitHub Actions
+* Apply migrations and run quality checks through GitHub Actions
 
 ## Project Structure
 
@@ -32,7 +33,14 @@ expense-tracker-api/
 ├── .github/
 │   └── workflows/
 │       └── tests.yml
+├── migrations/
+│   ├── versions/
+│   │   └── 781b81c21abf_create_expenses_table.py
+│   ├── env.py
+│   ├── README
+│   └── script.py.mako
 ├── .gitignore
+├── alembic.ini
 ├── app.py
 ├── config.py
 ├── database.py
@@ -54,9 +62,9 @@ expense-tracker-api/
     └── test_postgres_expense_repository.py
 ```
 
-The Flask application uses PostgreSQL as its active database.
+The Flask application uses PostgreSQL as its active database. Alembic migration files are the single source of truth for the PostgreSQL schema.
 
-The SQLite repository and JSON-to-SQLite migration files are retained as previous implementation examples and for comparison with the PostgreSQL version. The generated `expenses.db` file is ignored by Git.
+The SQLite repository and JSON-to-SQLite migration files are retained as previous implementation examples and for comparison with PostgreSQL. The generated `expenses.db` file is ignored by Git.
 
 ## Technologies Used
 
@@ -64,6 +72,8 @@ The SQLite repository and JSON-to-SQLite migration files are retained as previou
 * Flask
 * PostgreSQL 18
 * Psycopg 3
+* Alembic
+* SQLAlchemy migration operations
 * SQL
 * Ruff
 * Python `unittest`
@@ -142,14 +152,15 @@ createdb --owner=expense_app expense_tracker_test
 
 ## PostgreSQL Configuration
 
-The application reads its PostgreSQL connection settings from environment variables:
+The application and Alembic read PostgreSQL connection settings from environment variables:
 
 ```bash
 export POSTGRES_HOST=localhost
 export POSTGRES_PORT=5432
 export POSTGRES_DATABASE=expense_tracker
 export POSTGRES_USER=expense_app
-export POSTGRES_PASSWORD="your-local-password"
+read -s POSTGRES_PASSWORD
+export POSTGRES_PASSWORD
 ```
 
 Never commit a real database password to GitHub.
@@ -165,15 +176,49 @@ The default non-secret configuration is:
 
 `POSTGRES_PASSWORD` does not have a default and must be supplied through the environment.
 
+## Database Migrations
+
+Apply every missing migration before starting the application:
+
+```bash
+python3 -m alembic upgrade head
+```
+
+View the database’s current revision:
+
+```bash
+python3 -m alembic current
+```
+
+View the complete migration history:
+
+```bash
+python3 -m alembic history
+```
+
+Create a migration for a future schema change:
+
+```bash
+python3 -m alembic revision -m "describe the schema change"
+```
+
+After creating a revision, implement its `upgrade()` and `downgrade()` functions and test both directions on a disposable database.
+
+The initial revision creates the PostgreSQL `expenses` table. Existing databases that already matched this schema were stamped once during Alembic adoption. New databases must use `alembic upgrade head`; they should not use `stamp` to skip unapplied migrations.
+
 ## Run the Application
+
+Apply migrations first:
+
+```bash
+python3 -m alembic upgrade head
+```
 
 Start the Flask development server:
 
 ```bash
 python3 app.py
 ```
-
-The application initializes the PostgreSQL `expenses` table automatically if it does not already exist.
 
 The API runs at:
 
@@ -183,19 +228,28 @@ http://127.0.0.1:5000
 
 Stop the development server with `Control + C`.
 
+When finished, remove the password from the current shell:
+
+```bash
+unset POSTGRES_PASSWORD
+```
+
 ## Run Tests
 
 Make sure PostgreSQL is running and `expense_tracker_test` exists.
 
-Set the PostgreSQL password in the current terminal, then run:
+Enter the PostgreSQL password and run the complete suite:
 
 ```bash
+read -s POSTGRES_PASSWORD
+export POSTGRES_PASSWORD
 python3 -m unittest discover -s tests
+unset POSTGRES_PASSWORD
 ```
 
-The PostgreSQL tests temporarily switch to `expense_tracker_test` and clear its `expenses` table before and after every test.
+The PostgreSQL tests temporarily switch to `expense_tracker_test`, apply the current Alembic migrations, and clear the `expenses` table before and after every test.
 
-Do not use a production database for automated tests.
+Never use a development or production database for automated tests.
 
 ## Run Code-Quality Checks
 
@@ -220,6 +274,7 @@ The workflow:
 * Starts a temporary PostgreSQL 18 service
 * Creates an isolated test database
 * Installs application and development dependencies
+* Applies all Alembic migrations
 * Runs Ruff
 * Runs the complete automated test suite
 * Reports a successful or failed status check on the pull request
@@ -316,6 +371,7 @@ The automated test suite covers:
 * SQLite repository behavior
 * PostgreSQL repository CRUD operations
 * PostgreSQL database constraints
+* Alembic schema migration setup
 * Duplicate-ID rollback behavior
 * Test database isolation
 * JSON-to-SQLite migration behavior
@@ -330,10 +386,10 @@ OK
 
 ## Future Improvements
 
-* Add schema migrations with Alembic
 * Add PostgreSQL connection pooling
 * Move filtering, sorting, pagination, and reports into SQL queries
 * Add user authentication and authorization
 * Add Swagger/OpenAPI documentation
 * Add Docker support
+* Add migration rollback tests to continuous integration
 * Add production deployment configuration

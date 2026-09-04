@@ -1,8 +1,11 @@
 import unittest
 from unittest.mock import patch
 
+from alembic import command
+from alembic.config import Config
+
 from app import app
-from postgres_database import get_postgres_connection, init_postgres_db
+from postgres_database import get_postgres_connection
 from postgres_expense_repository import insert_expense
 
 
@@ -36,9 +39,14 @@ class TestApp(unittest.TestCase):
             "postgres_database.POSTGRES_DATABASE",
             "expense_tracker_test",
         )
+        self.config_database_patcher = patch(
+            "config.POSTGRES_DATABASE",
+            "expense_tracker_test",
+        )
         self.database_patcher.start()
-
-        init_postgres_db()
+        self.config_database_patcher.start()
+        alembic_config = Config("alembic.ini")
+        command.upgrade(alembic_config, "head")
 
         with get_postgres_connection() as connection:
             connection.execute("TRUNCATE TABLE expenses")
@@ -48,6 +56,7 @@ class TestApp(unittest.TestCase):
     def tearDown(self):
         with get_postgres_connection() as connection:
             connection.execute("TRUNCATE TABLE expenses")
+        self.config_database_patcher.stop()
         self.database_patcher.stop()
 
     def make_expense(self, expense_id, amount=100):
