@@ -2,8 +2,10 @@ import unittest
 from unittest.mock import patch
 
 import psycopg
+from alembic import command
+from alembic.config import Config
 
-from postgres_database import get_postgres_connection, init_postgres_db
+from postgres_database import get_postgres_connection
 from postgres_expense_repository import (
     delete_expense_by_id,
     get_all_expenses,
@@ -19,9 +21,15 @@ class TestPostgresExpenseRepository(unittest.TestCase):
             "postgres_database.POSTGRES_DATABASE",
             "expense_tracker_test",
         )
+        self.config_database_patcher = patch(
+            "config.POSTGRES_DATABASE",
+            "expense_tracker_test",
+        )
         self.database_patcher.start()
+        self.config_database_patcher.start()
 
-        init_postgres_db()
+        alembic_config = Config("alembic.ini")
+        command.upgrade(alembic_config, "head")
 
         with get_postgres_connection() as connection:
             connection.execute("TRUNCATE TABLE expenses")
@@ -30,6 +38,7 @@ class TestPostgresExpenseRepository(unittest.TestCase):
         with get_postgres_connection() as connection:
             connection.execute("TRUNCATE TABLE expenses")
 
+        self.config_database_patcher.stop()
         self.database_patcher.stop()
 
     def test_database_starts_empty(self):

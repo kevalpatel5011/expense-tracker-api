@@ -44,6 +44,9 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements-dev.txt
 
+      - name: Apply database migrations
+        run: python -m alembic upgrade head
+
       - name: Check code quality
         run: python -m ruff check .
 
