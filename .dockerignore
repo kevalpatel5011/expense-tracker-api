@@ -1,0 +1,13 @@
+.git/
+.github/
+.venv/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+.pytest_cache/
+.env
+*.db
+tests/
+requirements-dev.txt
+expenses.json
+README.md

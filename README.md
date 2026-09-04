@@ -26,6 +26,11 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Run isolated PostgreSQL integration tests
 * Apply migrations and run quality checks through GitHub Actions
 * Reuse PostgreSQL connections through a connection pool
+* Package and run the API with Docker
+* Run Flask, Alembic, and PostgreSQL with Docker Compose
+* Serve Flask through the production Gunicorn WSGI server
+* Run containers with a non-root user
+* Verify Docker configuration and image builds in CI
 
 ## Project Structure
 
@@ -42,6 +47,10 @@ expense-tracker-api/
 │   └── script.py.mako
 ├── .gitignore
 ├── alembic.ini
+├── .dockerignore
+├── .env.example
+├── Dockerfile
+├── compose.yaml
 ├── app.py
 ├── config.py
 ├── database.py
@@ -82,6 +91,9 @@ The SQLite repository and JSON-to-SQLite migration files are retained as previou
 * Python `unittest`
 * GitHub Actions
 * Git and GitHub
+* Docker
+* Docker Compose
+* Gunicorn
 
 ## Database Design
 
@@ -235,6 +247,14 @@ When finished, remove the password from the current shell:
 
 ```bash
 unset POSTGRES_PASSWORD
+```
+
+## Run with Docker
+
+Create the local environment file:
+
+```bash
+cp .env.example .env
 ```
 
 ## Run Tests
