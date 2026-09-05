@@ -31,6 +31,7 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Serve Flask through the production Gunicorn WSGI server
 * Run containers with a non-root user
 * Verify Docker configuration and image builds in CI
+* Document the API contract with OpenAPI 3.2
 
 ## Project Structure
 
@@ -61,6 +62,7 @@ expense-tracker-api/
 ├── Expense_Tracker_System.py
 ├── expenses.json
 ├── migrate_json_to_sqlite.py
+├── openapi.yaml
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── README.md
@@ -94,6 +96,7 @@ The SQLite repository and JSON-to-SQLite migration files are retained as previou
 * Docker
 * Docker Compose
 * Gunicorn
+* OpenAPI 3.2 and openapi-spec-validator
 
 ## Database Design
 
@@ -290,19 +293,30 @@ git diff --check
 
 ## Continuous Integration
 
-GitHub Actions runs automatically for pull requests targeting `main`.
+GitHub Actions runs automatically on pushes to `main` and pull requests targeting `main`.
 
 The workflow:
 
 * Starts a temporary PostgreSQL 18 service
 * Creates an isolated test database
 * Installs application and development dependencies
+* Validates the OpenAPI specification
 * Applies all Alembic migrations
 * Runs Ruff
 * Runs the complete automated test suite
 * Reports a successful or failed status check on the pull request
+* Validates the Docker Compose configuration
+* Builds the Docker image
 
 The `main` branch requires the GitHub Actions test check to pass before merging.
+
+## OpenAPI Documentation
+* [`openapi.yaml`](openapi.yaml) contains the OpenAPI 3.2 API contract.
+* It documents endpoints, parameters, request bodies, response bodies, and reusable schemas.
+* Developers can validate it with:
+```bash
+python3 -m openapi_spec_validator openapi.yaml
+```
 
 ## Example API Requests
 
@@ -338,18 +352,18 @@ curl "http://127.0.0.1:5000/expenses?min_amount=100&max_amount=2000"
 | GET    | `/health`                            | Get the API health status                                   |
 | GET    | `/expenses`                          | Get expenses with optional filters, sorting, and pagination |
 | POST   | `/expenses`                          | Create an expense                                           |
-| GET    | `/expenses/<expense_id>`             | Get an expense by ID                                        |
-| PUT    | `/expenses/<expense_id>`             | Replace an existing expense                                 |
-| PATCH  | `/expenses/<expense_id>`             | Update selected expense fields                              |
-| DELETE | `/expenses/<expense_id>`             | Delete an expense                                           |
+| GET    | `/expenses/{expense_id}`             | Get an expense by ID                                        |
+| PUT    | `/expenses/{expense_id}`             | Replace an existing expense                                 |
+| PATCH  | `/expenses/{expense_id}`             | Update selected expense fields                              |
+| DELETE | `/expenses/{expense_id}`             | Delete an expense                                           |
 | GET    | `/expenses/summary`                  | Get an expense summary                                      |
-| GET    | `/expenses/category/<category>`      | Get expenses by category                                    |
-| GET    | `/expenses/date/<date>`              | Get expenses by date                                        |
-| GET    | `/reports/monthly/<year>/<month>`    | Get a monthly expense report                                |
-| GET    | `/reports/yearly/<year>`             | Get a yearly expense report                                 |
+| GET    | `/expenses/category/{category}`      | Get expenses by category                                    |
+| GET    | `/expenses/date/{date}`              | Get expenses by date                                        |
+| GET    | `/reports/monthly/{year}/{month}`    | Get a monthly expense report                                |
+| GET    | `/reports/yearly/{year}`             | Get a yearly expense report                                 |
 | GET    | `/reports/categories`                | Get a category summary                                      |
-| GET    | `/reports/categories/<year>`         | Get a yearly category report                                |
-| GET    | `/reports/categories/<year>/<month>` | Get a monthly category report                               |
+| GET    | `/reports/categories/{year}`         | Get a yearly category report                                |
+| GET    | `/reports/categories/{year}/{month}` | Get a monthly category report                               |
 
 ## Create an Expense
 
@@ -410,10 +424,8 @@ OK
 
 ## Future Improvements
 
-* Add PostgreSQL connection pooling
 * Move filtering, sorting, pagination, and reports into SQL queries
 * Add user authentication and authorization
-* Add Swagger/OpenAPI documentation
-* Add Docker support
+* Add an interactive Swagger UI for browsing and testing the API
 * Add migration rollback tests to continuous integration
-* Add production deployment configuration
+* Deploy the Dockerized API to a production hosting platform

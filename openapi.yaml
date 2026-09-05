@@ -1,0 +1,499 @@
+openapi: 3.2.0
+info:
+  title: Expense Tracker API
+  version: 1.0.0
+  description: API for managing expenses
+
+servers:
+  - url: http://127.0.0.1:5000
+    description: Local development server
+
+paths:
+  /:
+    get:
+      summary: Get API welcome message
+      operationId: getHome
+      responses:
+        "200":
+          description: Welcome message returned successfully
+          content:
+            text/html:
+              schema:
+                type: string
+  /health:
+    get:
+      summary: Check API health
+      operationId: getHealth
+      responses:
+        "200":
+          description: The API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - message
+                  - status
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: string
+
+  /expenses:
+    get:
+      summary: Get all expenses
+      operationId: getExpenses
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: min_amount
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            minimum: 0
+        - name: max_amount
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            minimum: 0
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+        - name: sort_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - expense_id
+              - title
+              - amount
+              - category
+              - date
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+      responses:
+        "200":
+          description: Expenses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+
+    post:
+      summary: Create an expense
+      operationId: createExpense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Expense"
+      responses:
+        "201":
+          description: Expense created successfully
+          content:
+            application/json:
+                schema:
+                  $ref: "#/components/schemas/Expense"
+        "400":
+          description: Invalid request data
+        "409":
+          description: Expense ID already exists
+
+  /expenses/{expense_id}:
+    parameters:
+        - name: expense_id
+          in: path
+          required: true
+          schema:
+            type: integer
+
+    get:
+      summary: Get an expense by ID
+      operationId: getExpenseById
+      responses:
+        "200":
+          description: Expense retrieved successfully
+          content:
+            application/json:
+                schema:
+                  $ref: "#/components/schemas/Expense"
+        "404":
+          description: Expense not found
+
+    delete:
+      summary: Delete an expense
+      operationId: deleteExpense
+      responses:
+        "200":
+          description: Expense deleted successfully
+        "404":
+          description: Expense not found
+
+    patch:
+      summary: Partially update an expense
+      operationId: patchExpense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpensePatch"
+      responses:
+        "200":
+          description: Expense updated successfully
+          content:
+            application/json:
+                schema:
+                  $ref: "#/components/schemas/Expense"
+        "400":
+          description: Invalid update data
+        "404":
+          description: Expense not found
+
+    put:
+      summary: Replace an expense
+      operationId: replaceExpense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpensePut"
+      responses:
+        "200":
+          description: Expense updated successfully
+          content:
+            application/json:
+                schema:
+                  $ref: "#/components/schemas/Expense"
+        "400":
+          description: Invalid expense data
+        "404":
+          description: Expense not found
+
+  /expenses/summary:
+    get:
+      summary: Get expense summary
+      operationId: getExpenseSummary
+      responses:
+        "200":
+          description: Expense summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseSummary"
+
+  /expenses/category/{category}:
+    get:
+      summary: Get expenses by category
+      operationId: getExpensesByCategory
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Expenses by category retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+
+  /expenses/date/{date}:
+    get:
+      summary: Get expenses by date
+      operationId: getExpensesByDate
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Expenses by date retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Expense"
+
+  /reports/categories:
+    get:
+      summary: Get category report
+      operationId: getCategoryReport
+      responses:
+        "200":
+          description: Category report retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/CategorySummaryItem"
+
+  /reports/categories/{year}/{month}:
+    get:
+      summary: Get monthly category report
+      operationId: getMonthlyCategoryReport
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1000
+            maximum: 9999
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        "200":
+          description: Category report by month retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/CategoryReportItem"
+
+  /reports/categories/{year}:
+    get:
+      summary: Get yearly category report
+      operationId: getYearlyCategoryReport
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1000
+            maximum: 9999
+      responses:
+        "200":
+          description: Category report by year retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryReportItem"
+
+  /reports/monthly/{year}/{month}:
+    get:
+      summary: Get monthly expense report
+      operationId: getMonthlyReport
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1000
+            maximum: 9999
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        "200":
+          description: Expense report by month retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseReport"
+
+  /reports/yearly/{year}:
+    get:
+      summary: Get yearly expense report
+      operationId: getYearlyReport
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1000
+            maximum: 9999
+      responses:
+        "200":
+          description: Expense report by year retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/ExpenseReport"
+
+components:
+  schemas:
+    Expense:
+      type: object
+      required:
+        - expense_id
+        - title
+        - amount
+        - category
+        - date
+      properties:
+        expense_id:
+          type: integer
+        title:
+          type: string
+        amount:
+          type: number
+          format: double
+          minimum: 0
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+
+    ExpensePatch:
+      type: object
+      minProperties: 1
+      additionalProperties: false
+      properties:
+        title:
+          type: string
+        amount:
+          type: number
+          format: double
+          minimum: 0
+        category:
+          type: string
+        date:
+          type: string
+          format: date
+
+    ExpensePut:
+      allOf:
+        - $ref: "#/components/schemas/ExpensePatch"
+        - type: object
+          required:
+            - title
+            - amount
+            - category
+            - date
+
+    ExpenseSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - count
+        - total_amount
+        - average_amount
+        - highest_expense
+        - lowest_expense
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        total_amount:
+          type: number
+          format: double
+          minimum: 0
+        average_amount:
+          type: number
+          format: double
+          minimum: 0
+        highest_expense:
+          oneOf:
+            - $ref: "#/components/schemas/Expense"
+            - type: "null"
+        lowest_expense:
+          oneOf:
+            - $ref: "#/components/schemas/Expense"
+            - type: "null"
+
+    CategorySummaryItem:
+      type: object
+      additionalProperties: false
+      required:
+        - count
+        - total_amount
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        total_amount:
+          type: number
+          format: double
+          minimum: 0
+
+    CategoryReportItem:
+      type: object
+      additionalProperties: false
+      required:
+        - count
+        - total_amount
+        - expenses
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        total_amount:
+          type: number
+          format: double
+          minimum: 0
+        expenses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Expense"
+
+    ExpenseReport:
+      oneOf:
+        - $ref: "#/components/schemas/CategoryReportItem"
+        - type: object
+          maxProperties: 0
