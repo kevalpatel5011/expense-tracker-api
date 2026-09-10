@@ -11,6 +11,7 @@ from postgres_expense_repository import (
     get_all_expenses,
     get_expense_by_id,
     insert_expense,
+    search_expenses,
     update_expense_by_id,
 )
 
@@ -176,6 +177,273 @@ class TestPostgresExpenseRepository(unittest.TestCase):
         result = get_expense_by_id(expense["expense_id"])
         self.assertIsNone(result)
 
+    def test_search_expenses_filters_by_category_case_insensitively(self):
+        expense_1 = {
+            "expense_id": 100,
+            "title": "rent",
+            "amount": 2200.0,
+            "category": "housing",
+            "date": "2026-09-03",
+        }
+        expense_2 = {
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 200.0,
+            "category": "utility",
+            "date": "2026-09-03",
+        }
+        expense_3 = {
+            "expense_id": 110,
+            "title": "tax",
+            "amount": 100.0,
+            "category": "housing",
+            "date": "2026-09-03",
+        }
+        insert_expense(expense_1)
+        insert_expense(expense_2)
+        insert_expense(expense_3)
+        result = search_expenses(category="HOUSING")
+
+        self.assertEqual([expense["expense_id"] for expense in result],[100, 110])
+
+    def test_search_expenses_filters_by_inclusive_amount_range(self):
+        expense_1 = {
+            "expense_id": 100,
+            "title": "uber",
+            "amount": 50.0,
+            "category": "transport",
+            "date": "2026-09-03",
+        }
+        expense_2 = {
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 100.0,
+            "category": "utility",
+            "date": "2026-09-05",
+        }
+        expense_3 = {
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200.0,
+            "category": "housing",
+            "date": "2026-09-08",
+        }
+        expense_4 = {
+            "expense_id": 103,
+            "title": "water",
+            "amount": 250.0,
+            "category": "utility",
+            "date": "2026-09-13",
+        }
+        insert_expense(expense_1)
+        insert_expense(expense_2)
+        insert_expense(expense_3)
+        insert_expense(expense_4)
+        result = search_expenses(min_amount=100, max_amount=200)
+
+        self.assertEqual([expense["expense_id"] for expense in result],[101, 102])
+
+    def test_search_expenses_filters_by_inclusive_date_range(self):
+        expense_1 = {
+            "expense_id": 100,
+            "title": "uber",
+            "amount": 50.0,
+            "category": "transport",
+            "date": "2026-05-31",
+        }
+        expense_2 = {
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 100.0,
+            "category": "utility",
+            "date": "2026-06-01",
+        }
+        expense_3 = {
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200.0,
+            "category": "housing",
+            "date": "2026-06-30",
+        }
+        expense_4 = {
+            "expense_id": 103,
+            "title": "water",
+            "amount": 250.0,
+            "category": "utility",
+            "date": "2026-07-01",
+        }
+        insert_expense(expense_1)
+        insert_expense(expense_2)
+        insert_expense(expense_3)
+        insert_expense(expense_4)
+        result = search_expenses(
+            start_date="2026-06-01",
+            end_date="2026-06-30",
+        )
+
+        self.assertEqual([expense["expense_id"] for expense in result],[101, 102])
+
+    def test_search_expenses_combines_filters(self):
+        expense_1 = {
+            "expense_id": 100,
+            "title": "uber",
+            "amount": 150.0,
+            "category": "housing",
+            "date": "2026-06-15",
+        }
+        expense_2 = {
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 250.0,
+            "category": "housing",
+            "date": "2026-06-15",
+        }
+        expense_3 = {
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 150.0,
+            "category": "utility",
+            "date": "2026-06-15",
+        }
+        expense_4 = {
+            "expense_id": 103,
+            "title": "water",
+            "amount": 150.0,
+            "category": "housing",
+            "date": "2026-07-01",
+        }
+        insert_expense(expense_1)
+        insert_expense(expense_2)
+        insert_expense(expense_3)
+        insert_expense(expense_4)
+        result = search_expenses(
+            category="HOUSING",
+            min_amount=100,
+            max_amount=200,
+            start_date="2026-06-01",
+            end_date="2026-06-30",
+        )
+
+        self.assertEqual([expense["expense_id"] for expense in result],[100])
+
+    def test_search_expenses_sorts_by_amount_descending(self):
+        expense_1 = {
+            "expense_id": 100,
+            "title": "uber",
+            "amount": 50.0,
+            "category": "housing",
+            "date": "2026-06-15",
+        }
+        expense_2 = {
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 300.0,
+            "category": "housing",
+            "date": "2026-06-15",
+        }
+        expense_3 = {
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 150.0,
+            "category": "utility",
+            "date": "2026-06-15",
+        }
+        insert_expense(expense_1)
+        insert_expense(expense_2)
+        insert_expense(expense_3)
+        result = search_expenses(sort_by="amount", order="desc")
+
+        self.assertEqual([expense["expense_id"] for expense in result],[101, 102, 100])
+
+    def test_search_expenses_rejects_invalid_sort_field(self):
+        with self.assertRaises(ValueError):
+            search_expenses(sort_by="amount; DROP TABLE expenses")
+
+    def test_search_expenses_rejects_invalid_sort_order(self):
+        with self.assertRaises(ValueError):
+            search_expenses(order="sideways")
+
+    def test_search_expenses_applies_limit_and_offset(self):
+        expense_1 = {
+            "expense_id": 100,
+            "title": "uber",
+            "amount": 50.0,
+            "category": "transport",
+            "date": "2026-09-03",
+        }
+        expense_2 = {
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 100.0,
+            "category": "utility",
+            "date": "2026-09-05",
+        }
+        expense_3 = {
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200.0,
+            "category": "housing",
+            "date": "2026-09-08",
+        }
+        expense_4 = {
+            "expense_id": 103,
+            "title": "water",
+            "amount": 250.0,
+            "category": "utility",
+            "date": "2026-09-13",
+        }
+        insert_expense(expense_1)
+        insert_expense(expense_2)
+        insert_expense(expense_3)
+        insert_expense(expense_4)
+        result = search_expenses(limit=2, offset=1)
+
+        self.assertEqual([expense["expense_id"] for expense in result],[101, 102])
+
+    def test_search_expenses_rejects_nonpositive_limit(self):
+        with self.assertRaises(ValueError):
+            search_expenses(limit=0)
+
+    def test_search_expenses_rejects_negative_offset(self):
+        with self.assertRaises(ValueError):
+            search_expenses(offset=-1)
+
+    def test_search_expenses_applies_offset_without_limit(self):
+        expense_1 = {
+            "expense_id": 100,
+            "title": "uber",
+            "amount": 50.0,
+            "category": "transport",
+            "date": "2026-09-03",
+        }
+        expense_2 = {
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 100.0,
+            "category": "utility",
+            "date": "2026-09-05",
+        }
+        expense_3 = {
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200.0,
+            "category": "housing",
+            "date": "2026-09-08",
+        }
+        expense_4 = {
+            "expense_id": 103,
+            "title": "water",
+            "amount": 250.0,
+            "category": "utility",
+            "date": "2026-09-13",
+        }
+        insert_expense(expense_1)
+        insert_expense(expense_2)
+        insert_expense(expense_3)
+        insert_expense(expense_4)
+        result = search_expenses(offset=2)
+
+        self.assertEqual([expense["expense_id"] for expense in result],[102, 103])
 
 if __name__ == "__main__":
     unittest.main()

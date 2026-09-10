@@ -177,12 +177,30 @@ class TestApp(unittest.TestCase):
         self.assertEqual(amounts, sorted(amounts))
 
     def test_get_expenses_invalid_sort_by(self):
-        response = self.client.get("/expenses?sort_by=expense_id")
+        response = self.client.get("/expenses?sort_by=unknown")
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.get_json()["error"],
-            "sort_by must be amount, date, title, or category"
+            "sort_by must be expense_id, amount, date, title, or category"
+        )
+
+    def test_get_expenses_sort_by_expense_id_desc(self):
+        response = self.client.get("/expenses?sort_by=expense_id&order=desc")
+        data = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [expense["expense_id"] for expense in data],
+            [110, 101, 100]
+        )
+
+    def test_get_expenses_offset_without_limit(self):
+        response = self.client.get("/expenses?offset=1")
+        data = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [expense["expense_id"] for expense in data],
+            [101, 110]
         )
 
     def test_get_expenses_pagination_limit(self):

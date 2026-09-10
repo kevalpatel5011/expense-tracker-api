@@ -54,43 +54,6 @@ def create_expense_from_data(data):
     )
 
 
-def filter_by_category(expenses, category):
-    filtered = []
-    for expense in expenses:
-        if expense["category"].lower() == category.lower():
-            filtered.append(expense)
-    return filtered
-
-
-def filter_by_amount_range(expenses, min_amount, max_amount):
-    filtered = []
-    for expense in expenses:
-        if min_amount <= expense["amount"] <= max_amount:
-            filtered.append(expense)
-    return filtered
-
-
-def filter_by_date_range(expenses, start_date, end_date):
-    filtered = []
-    for expense in expenses:
-        if start_date <= expense["date"] <= end_date:
-            filtered.append(expense)
-    return filtered
-
-
-def sort_expenses(expenses, sort_by, order):
-    if order == "asc":
-        expenses.sort(key=lambda expense: expense[sort_by])
-    else:
-        expenses.sort(reverse=True, key=lambda expense: expense[sort_by])
-
-
-def apply_pagination(expenses, offset, limit):
-    if limit is not None:
-        expenses = expenses[offset:offset + limit]
-    return expenses
-
-
 def build_category_summary(expenses):
     summary = {}
     for expense in expenses:
@@ -116,4 +79,4 @@ def is_valid_date_format(date_value):
 REQUIRED_EXPENSE_FIELDS = ["expense_id", "title", "amount", "category", "date"]
 REQUIRED_UPDATE_FIELDS = ["title", "amount", "category", "date"]
 ALLOWED_UPDATE_FIELDS = ["title", "amount", "category", "date"]
-ALLOWED_SORT_FIELDS = ["amount", "date", "title", "category"]
+ALLOWED_SORT_FIELDS = ["expense_id", "amount", "date", "title", "category"]

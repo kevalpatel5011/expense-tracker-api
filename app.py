@@ -8,14 +8,9 @@ from expense_utils import (
     REQUIRED_EXPENSE_FIELDS,
     REQUIRED_UPDATE_FIELDS,
     apply_expense_updates,
-    apply_pagination,
     build_category_summary,
     create_expense_from_data,
-    filter_by_amount_range,
-    filter_by_category,
-    filter_by_date_range,
     is_valid_date_format,
-    sort_expenses,
     validate_allowed_fields,
     validate_required_fields,
 )
@@ -25,6 +20,7 @@ from postgres_expense_repository import (
 from postgres_expense_repository import (
     get_all_expenses,
     insert_expense,
+    search_expenses,
 )
 from postgres_expense_repository import (
     get_expense_by_id as get_expense_by_id_from_db,
@@ -98,7 +94,6 @@ def health():
 @app.route("/expenses", methods=["GET", "POST"])
 def expenses():
     if request.method == "GET":
-        result = get_all_expenses()
 
         category = request.args.get("category")
         min_amount = request.args.get("min_amount")
@@ -110,9 +105,6 @@ def expenses():
         sort_by = request.args.get("sort_by")
         order = request.args.get("order")
         
-        if category:
-            result = filter_by_category(result, category)
-
         if (min_amount is None) != (max_amount is None):
             return error_response("Both min_amount and max_amount are required", 400)
         if min_amount and max_amount:
@@ -122,7 +114,6 @@ def expenses():
             max_amount, error = parse_amount(max_amount)
             if error:
                 return error
-            result = filter_by_amount_range(result, min_amount, max_amount)
 
         if (start_date is None) != (end_date is None):
             return error_response("Both start_date and end_date are required", 400)
@@ -134,24 +125,28 @@ def expenses():
             
             if start_date > end_date:
                 return error_response("start_date must be before or equal to end_date", 400)
-            result = filter_by_date_range(result, start_date, end_date)
 
         if order and not sort_by:
             return error_response("sort_by is required when order is provided", 400)
         if sort_by:
             if sort_by not in ALLOWED_SORT_FIELDS:
-                return error_response("sort_by must be amount, date, title, or category", 400)
+                return error_response(
+                    "sort_by must be expense_id, amount, date, title, or category",
+                    400,
+                )
             if order is None:
                 order = "asc"
             if order not in ["asc", "desc"]:
                 return error_response("order must be asc or desc", 400)
-            sort_expenses(result, sort_by, order)
-        
+        else:
+            sort_by = "expense_id"
+            order = "asc"
         if limit is not None:
             try:
                 limit = int(limit)
             except ValueError:
                 return error_response("limit must be a number", 400)
+
             if limit <= 0:
                 return error_response("limit must be greater than 0", 400)
         if offset is not None:
@@ -163,7 +158,18 @@ def expenses():
                 return error_response("offset must be non-negative", 400)
         else:
             offset = 0
-        result = apply_pagination(result, offset, limit)
+
+        result = search_expenses(
+            category=category or None,
+            min_amount=min_amount,
+            max_amount=max_amount,
+            start_date=start_date,
+            end_date=end_date,
+            sort_by=sort_by,
+            order=order,
+            limit=limit,
+            offset=offset,
+        )
         return jsonify(result)
 
     if request.method == "POST":
