@@ -601,5 +601,25 @@ class TestApp(unittest.TestCase):
         self.assertEqual(data, "Expense Tracker API is running")
 
 
+class TestDocumentationRoutes(unittest.TestCase):
+    def setUp(self):
+        self.client = app.test_client()
+
+    def test_get_openapi_spec(self):
+        response = self.client.get("/openapi.yaml")
+
+        self.addCleanup(response.close)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "application/yaml")
+        self.assertIn(b"openapi: 3.2.0", response.data)
+
+    def test_get_swagger_ui(self):
+        response = self.client.get("/docs")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "text/html")
+        self.assertIn(b"SwaggerUIBundle", response.data)
+        self.assertIn(b"/openapi.yaml", response.data)
+
 if __name__ == "__main__":
     unittest.main()

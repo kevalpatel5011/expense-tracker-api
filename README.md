@@ -32,6 +32,7 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Run containers with a non-root user
 * Verify Docker configuration and image builds in CI
 * Document the API contract with OpenAPI 3.2
+* Users can browse and test the API through Swagger UI
 
 ## Project Structure
 
@@ -66,6 +67,8 @@ expense-tracker-api/
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── README.md
+├── templates/
+│   └── swagger_ui.html
 └── tests/
     ├── test_app.py
     ├── test_expense_repository.py
@@ -97,6 +100,7 @@ The SQLite repository and JSON-to-SQLite migration files are retained as previou
 * Docker Compose
 * Gunicorn
 * OpenAPI 3.2 and openapi-spec-validator
+* Swagger UI
 
 ## Database Design
 
@@ -311,9 +315,18 @@ The workflow:
 The `main` branch requires the GitHub Actions test check to pass before merging.
 
 ## OpenAPI Documentation
-* [`openapi.yaml`](openapi.yaml) contains the OpenAPI 3.2 API contract.
-* It documents endpoints, parameters, request bodies, response bodies, and reusable schemas.
-* Developers can validate it with:
+
+[`openapi.yaml`](openapi.yaml) contains the OpenAPI 3.2 API contract. It documents endpoints, parameters, request bodies, response bodies, and reusable schemas.
+
+After starting the Flask application, open:
+
+* Interactive Swagger UI: http://127.0.0.1:5000/docs
+* Raw OpenAPI specification: http://127.0.0.1:5000/openapi.yaml
+
+Swagger UI loads the API contract from `/openapi.yaml`. It allows developers to inspect the API and send real requests through the browser.
+
+Validate the OpenAPI specification with:
+
 ```bash
 python3 -m openapi_spec_validator openapi.yaml
 ```
@@ -364,6 +377,8 @@ curl "http://127.0.0.1:5000/expenses?min_amount=100&max_amount=2000"
 | GET    | `/reports/categories`                | Get a category summary                                      |
 | GET    | `/reports/categories/{year}`         | Get a yearly category report                                |
 | GET    | `/reports/categories/{year}/{month}` | Get a monthly category report                               |
+| GET    | `/docs`                              | View and test the API through Swagger UI                    |
+| GET    | `/openapi.yaml`                      | Retrieve the raw OpenAPI specification                      |
 
 ## Create an Expense
 
@@ -413,11 +428,12 @@ The automated test suite covers:
 * Duplicate-ID rollback behavior
 * Test database isolation
 * JSON-to-SQLite migration behavior
+* OpenAPI specification and Swagger UI documentation routes
 
 Current local test result:
 
 ```text
-Ran 105 tests
+Ran 107 tests
 
 OK
 ```
@@ -426,6 +442,5 @@ OK
 
 * Move filtering, sorting, pagination, and reports into SQL queries
 * Add user authentication and authorization
-* Add an interactive Swagger UI for browsing and testing the API
 * Add migration rollback tests to continuous integration
 * Deploy the Dockerized API to a production hosting platform
