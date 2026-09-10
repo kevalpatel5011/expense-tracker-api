@@ -33,6 +33,7 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Verify Docker configuration and image builds in CI
 * Document the API contract with OpenAPI 3.2
 * Users can browse and test the API through Swagger UI
+* Filter, sort, and paginate expense listings directly in PostgreSQL
 
 ## Project Structure
 
@@ -429,18 +430,19 @@ The automated test suite covers:
 * Test database isolation
 * JSON-to-SQLite migration behavior
 * OpenAPI specification and Swagger UI documentation routes
+* PostgreSQL expense filtering, sorting, and pagination
 
 Current local test result:
 
 ```text
-Ran 107 tests
+Ran 120 tests
 
 OK
 ```
 
 ## Future Improvements
 
-* Move filtering, sorting, pagination, and reports into SQL queries
+* Move expense reports into PostgreSQL aggregate queries
 * Add user authentication and authorization
 * Add migration rollback tests to continuous integration
 * Deploy the Dockerized API to a production hosting platform
