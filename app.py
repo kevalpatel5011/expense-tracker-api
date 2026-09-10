@@ -1,5 +1,5 @@
 import psycopg
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
 from Expense_Tracker_System import ExpenseTracker
 from expense_utils import (
@@ -70,6 +70,20 @@ def build_tracker_from_database():
 @app.route("/")
 def home():
     return "Expense Tracker API is running"
+
+
+@app.route("/openapi.yaml")
+def get_openapi_spec():
+    return send_from_directory(
+        app.root_path,
+        "openapi.yaml",
+        mimetype="application/yaml",
+    )
+
+
+@app.route("/docs")
+def get_swagger_ui():
+    return render_template("swagger_ui.html")
 
 
 @app.route("/health")
