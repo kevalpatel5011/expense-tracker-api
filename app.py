@@ -1,5 +1,5 @@
 import psycopg
-from flask import Flask, jsonify, request, send_from_directory, render_template
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
 from Expense_Tracker_System import ExpenseTracker
 from expense_utils import (
