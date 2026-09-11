@@ -351,7 +351,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ExpenseReport"
+                type: object
+                additionalProperties:
+                  $ref: "#/components/schemas/CategoryReportItem"
 
   /reports/yearly/{year}:
     get:
@@ -371,8 +373,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties:
+                schema:
                   $ref: "#/components/schemas/ExpenseReport"
 
 components:

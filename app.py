@@ -8,7 +8,6 @@ from expense_utils import (
     REQUIRED_EXPENSE_FIELDS,
     REQUIRED_UPDATE_FIELDS,
     apply_expense_updates,
-    build_category_summary,
     create_expense_from_data,
     is_valid_date_format,
     validate_allowed_fields,
@@ -19,11 +18,27 @@ from postgres_expense_repository import (
 )
 from postgres_expense_repository import (
     get_all_expenses,
+    get_category_summary,
     insert_expense,
     search_expenses,
 )
 from postgres_expense_repository import (
     get_expense_by_id as get_expense_by_id_from_db,
+)
+from postgres_expense_repository import (
+    get_expense_summary as get_expense_summary_from_db,
+)
+from postgres_expense_repository import (
+    get_monthly_category_report as get_monthly_category_report_from_db,
+)
+from postgres_expense_repository import (
+    get_monthly_report as get_monthly_report_from_db,
+)
+from postgres_expense_repository import (
+    get_yearly_category_report as get_yearly_category_report_from_db,
+)
+from postgres_expense_repository import (
+    get_yearly_report as get_yearly_report_from_db,
 )
 from postgres_expense_repository import (
     update_expense_by_id as update_expense_by_id_in_db,
@@ -191,14 +206,7 @@ def expenses():
 
 @app.route("/expenses/summary")
 def get_expense_summary():
-    manager = build_tracker_from_database()
-    return jsonify({
-        "count": manager.get_expense_count(),
-        "total_amount": manager.get_total_expense_amount(),
-        "average_amount": manager.get_average_expense_amount(),
-        "highest_expense": manager.get_highest_expense(),
-        "lowest_expense": manager.get_lowest_expense(),
-    })
+    return jsonify(get_expense_summary_from_db())
 
 
 @app.route("/expenses/<int:expense_id>")
@@ -279,37 +287,27 @@ def replace_expense(expense_id):
 # Report routes
 @app.route("/reports/categories")
 def get_report_by_category():
-    all_expenses = get_all_expenses()
-    if not all_expenses:
-        return jsonify({})
-    summary = build_category_summary(all_expenses)
-    return jsonify(summary)
+    return jsonify(get_category_summary())
 
 
 @app.route("/reports/categories/<int:year>/<int:month>")
 def get_monthly_category_report(year, month):
-    manager = build_tracker_from_database()
-    return jsonify(manager.get_category_report_by_month(year, month))
+    return jsonify(get_monthly_category_report_from_db(year, month))
 
 
 @app.route("/reports/categories/<int:year>")
 def get_yearly_category_report(year):
-    manager = build_tracker_from_database()
-    return jsonify(manager.get_category_report_by_year(year))
+    return jsonify(get_yearly_category_report_from_db(year))
 
 
 @app.route("/reports/monthly/<int:year>/<int:month>")
 def get_monthly_report(year, month):
-    manager = build_tracker_from_database()
-    result = manager.get_monthly_report(year, month)
-    return jsonify(result)
+    return jsonify(get_monthly_report_from_db(year, month))
 
 
 @app.route("/reports/yearly/<int:year>")
 def get_yearly_report(year):
-    manager = build_tracker_from_database()
-    result = manager.get_yearly_report(year)
-    return jsonify(result)
+    return jsonify(get_yearly_report_from_db(year))
 
 
 if __name__ == "__main__":
