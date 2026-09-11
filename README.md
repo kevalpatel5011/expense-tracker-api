@@ -37,6 +37,7 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Calculate expense summaries using PostgreSQL aggregate queries
 * Generate monthly, yearly, and category reports directly in PostgreSQL
 * Retrieve expenses by category and exact date directly from PostgreSQL
+* Add PostgreSQL indexes for date, amount, and normalized-category queries
 
 
 ## Project Structure
@@ -48,7 +49,8 @@ expense-tracker-api/
 │       └── tests.yml
 ├── migrations/
 │   ├── versions/
-│   │   └── 781b81c21abf_create_expenses_table.py
+│   │   ├── 781b81c21abf_create_expenses_table.py
+│   │   └── 8f542f49f332_add_expense_query_indexes.py
 │   ├── env.py
 │   ├── README
 │   └── script.py.mako
@@ -80,7 +82,8 @@ expense-tracker-api/
     ├── test_expense_tracker.py
     ├── test_migration.py
     ├── test_postgres_database.py
-    └── test_postgres_expense_repository.py
+    ├── test_postgres_expense_repository.py
+    └── test_postgres_migration.py
 ```
 
 The Flask application uses PostgreSQL as its active database. Alembic migration files are the single source of truth for the PostgreSQL schema.
@@ -120,6 +123,14 @@ The PostgreSQL `expenses` table contains:
 | `amount`     | `NUMERIC(12,2) NOT NULL` | Accurate monetary value   |
 | `category`   | `TEXT NOT NULL`          | Expense category          |
 | `date`       | `DATE NOT NULL`          | Expense date              |
+
+The `expenses` table uses the following query indexes:
+
+| Index                             | Target                  | Purpose                                    |
+| --------------------------------- | ----------------------- | ------------------------------------------ |
+| `ix_expenses_date`                | `date`                  | Supports exact-date and date-range queries |
+| `ix_expenses_amount`              | `amount`                | Supports amount filtering and sorting      |
+| `ix_expenses_normalized_category` | `LOWER(TRIM(category))` | Supports normalized category searches      |
 
 The database also enforces:
 
@@ -443,12 +454,13 @@ The automated test suite covers:
 * Inclusive date ranges and leap-year boundaries
 * Case-insensitive category grouping and whitespace normalization
 * PostgreSQL category and exact-date expense lookups
+* PostgreSQL index creation and migration rollback
 
 
 Current local test result:
 
 ```text
-Ran 137 tests
+Ran 139 tests
 
 OK
 ```
@@ -456,5 +468,4 @@ OK
 ## Future Improvements
 
 * Add user authentication and authorization
-* Add migration rollback tests to continuous integration
 * Deploy the Dockerized API to a production hosting platform
