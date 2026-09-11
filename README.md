@@ -381,6 +381,7 @@ curl "http://127.0.0.1:5000/expenses?min_amount=100&max_amount=2000"
 | ------ | ------------------------------------ | ----------------------------------------------------------- |
 | GET    | `/`                                  | Check whether the API is running                            |
 | GET    | `/health`                            | Get the API health status                                   |
+| GET    | `/ready`                             | Check whether the API can connect to PostgreSQL             |
 | GET    | `/expenses`                          | Get expenses with optional filters, sorting, and pagination |
 | POST   | `/expenses`                          | Create an expense                                           |
 | GET    | `/expenses/{expense_id}`             | Get an expense by ID                                        |
@@ -460,7 +461,7 @@ The automated test suite covers:
 Current local test result:
 
 ```text
-Ran 139 tests
+Ran 142 tests
 
 OK
 ```

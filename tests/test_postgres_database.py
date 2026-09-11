@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 
 from postgres_database import (
+    check_postgres_connection,
     close_postgres_pool,
     get_postgres_connection,
     get_postgres_pool,
@@ -38,6 +39,16 @@ class TestPostgresDatabase(unittest.TestCase):
 
         pool.close.assert_called_once_with()
 
+    @patch("postgres_database.get_postgres_connection")
+    def test_check_postgres_connection_executes_select_one(self, get_connection):
+        connection = get_connection.return_value.__enter__.return_value
+        cursor = connection.execute.return_value
+
+        result = check_postgres_connection()
+
+        self.assertTrue(result)
+        connection.execute.assert_called_once_with("SELECT 1")
+        cursor.fetchone.assert_called_once_with()
 
 if __name__ == "__main__":
     unittest.main()
