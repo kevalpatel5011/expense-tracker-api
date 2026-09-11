@@ -14,6 +14,8 @@ from postgres_expense_repository import (
     get_expense_by_id,
     get_expense_report,
     get_expense_summary,
+    get_expenses_by_category,
+    get_expenses_by_date,
     get_monthly_category_report,
     get_monthly_report,
     get_yearly_category_report,
@@ -753,6 +755,98 @@ class TestPostgresExpenseRepository(unittest.TestCase):
             [expense["expense_id"] for expense in result["housing"]["expenses"]],
             [101, 102],
         )
+
+    def test_get_expenses_by_category(self):
+        expense_1 = {
+            "expense_id": 100,
+            "title": "rent",
+            "amount": 50,
+            "category": "utility",
+            "date": "2025-12-31",
+        }
+        expense_2 = {
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 100,
+            "category": "Housing",
+            "date": "2026-01-01",
+        }
+        expense_3 = {
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200,
+            "category": " housing ",
+            "date": "2026-12-31",
+        }
+        expense_4 = {
+            "expense_id": 103,
+            "title": "tax",
+            "amount": 400,
+            "category": "housing",
+            "date": "2027-01-01",
+        }
+        insert_expense(expense_1)
+        insert_expense(expense_2)
+        insert_expense(expense_3)
+        insert_expense(expense_4)
+        result = get_expenses_by_category("HOUSING")
+
+        self.assertEqual(result, [expense_2, expense_3, expense_4])
+        self.assertIsInstance(result[0]["amount"], float)
+
+    def test_get_expenses_by_category_with_no_matches(self):
+        insert_expense({
+            "expense_id": 103,
+            "title": "tax",
+            "amount": 400,
+            "category": "housing",
+            "date": "2027-01-01",
+        })
+        result = get_expenses_by_category("utility")
+
+        self.assertEqual(result, [])
+
+    def test_get_expenses_by_date(self):
+        expense_1 = {
+            "expense_id": 100,
+            "title": "rent",
+            "amount": 50,
+            "category": "utility",
+            "date": "2025-12-31",
+        }
+        expense_2 = {
+            "expense_id": 111,
+            "title": "bill",
+            "amount": 100,
+            "category": "Housing",
+            "date": "2026-01-01",
+        }
+        expense_3 = {
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200,
+            "category": " housing ",
+            "date": "2026-01-01",
+        }
+        insert_expense(expense_1)
+        insert_expense(expense_2)
+        insert_expense(expense_3)
+        result = get_expenses_by_date("2026-01-01")
+
+        self.assertEqual(result, [expense_3, expense_2])
+        self.assertIsInstance(result[0]["amount"], float)
+
+    def test_get_expenses_by_date_with_no_matches(self):
+        insert_expense({
+            "expense_id": 103,
+            "title": "tax",
+            "amount": 400,
+            "category": "housing",
+            "date": "2027-01-01",
+        })
+        result = get_expenses_by_date("2026-01-01")
+
+        self.assertEqual(result, [])
 
 if __name__ == "__main__":
     unittest.main()

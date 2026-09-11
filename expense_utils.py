@@ -17,22 +17,6 @@ def validate_allowed_fields(data, allowed_fields):
     return None
 
 
-def backup_expense(expense):
-    return {
-        "title": expense.title,
-        "amount": expense.amount,
-        "category": expense.category,
-        "date": expense.date,
-    }
-
-
-def restore_expense(expense, backup):
-    expense.title = backup["title"]
-    expense.amount = backup["amount"]
-    expense.category = backup["category"]
-    expense.date = backup["date"]
-
-
 def apply_expense_updates(expense, data):
     if "title" in data:
         expense.title = data["title"]
@@ -52,20 +36,6 @@ def create_expense_from_data(data):
         data["category"],
         data["date"]
     )
-
-
-def build_category_summary(expenses):
-    summary = {}
-    for expense in expenses:
-        category = expense["category"].strip().lower()
-        if category not in summary:
-            summary[category] = {
-                "count": 0,
-                "total_amount": 0,
-            }
-        summary[category]["count"] += 1
-        summary[category]["total_amount"] += expense["amount"]
-    return summary
 
 
 def is_valid_date_format(date_value):

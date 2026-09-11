@@ -262,6 +262,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Expense"
+        "400":
+          description: Date must be in YYYY-MM-DD format
 
   /reports/categories:
     get:

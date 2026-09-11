@@ -356,3 +356,31 @@ def get_yearly_category_report(year):
     last_date = date(year, 12, 31).isoformat()
 
     return get_category_report(first_date, last_date)
+
+
+def get_expenses_by_category(category):
+    query = """
+    SELECT expense_id, title, amount, category, date
+    FROM expenses
+    WHERE LOWER(TRIM(category)) = LOWER(TRIM(%s))
+    ORDER BY expense_id
+    """
+    parameter = (category,)
+    with get_postgres_connection() as connection:
+        rows = connection.execute(query, parameter).fetchall()
+
+    return [_serialize_expense(row) for row in rows]
+
+
+def get_expenses_by_date(expense_date):
+    query = """
+    SELECT expense_id, title, amount, category, date
+    FROM expenses
+    WHERE date = %s
+    ORDER BY expense_id
+    """
+    parameter = (date.fromisoformat(expense_date),)
+    with get_postgres_connection() as connection:
+        rows = connection.execute(query, parameter).fetchall()
+
+    return [_serialize_expense(row) for row in rows]
