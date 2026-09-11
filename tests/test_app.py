@@ -586,6 +586,15 @@ class TestApp(unittest.TestCase):
         finally:
             self.client.delete("/expenses/2100")
 
+    def test_expenses_by_date_rejects_invalid_date(self):
+        response = self.client.get("/expenses/date/not-a-date")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.get_json()["error"],
+            "Date must be in YYYY-MM-DD format",
+        )
+
     def test_get_expenses_category_case_insensitive(self):
         response = self.client.get("/expenses?category=HOUSING")
         data = response.get_json()

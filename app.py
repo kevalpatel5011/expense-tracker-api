@@ -1,7 +1,6 @@
 import psycopg
 from flask import Flask, jsonify, render_template, request, send_from_directory
 
-from Expense_Tracker_System import ExpenseTracker
 from expense_utils import (
     ALLOWED_SORT_FIELDS,
     ALLOWED_UPDATE_FIELDS,
@@ -17,7 +16,6 @@ from postgres_expense_repository import (
     delete_expense_by_id as delete_expense_by_id_from_db,
 )
 from postgres_expense_repository import (
-    get_all_expenses,
     get_category_summary,
     insert_expense,
     search_expenses,
@@ -27,6 +25,12 @@ from postgres_expense_repository import (
 )
 from postgres_expense_repository import (
     get_expense_summary as get_expense_summary_from_db,
+)
+from postgres_expense_repository import (
+    get_expenses_by_category as get_expenses_by_category_from_db,
+)
+from postgres_expense_repository import (
+    get_expenses_by_date as get_expenses_by_date_from_db,
 )
 from postgres_expense_repository import (
     get_monthly_category_report as get_monthly_category_report_from_db,
@@ -66,15 +70,6 @@ def parse_amount(value):
         return float(value), None
     except ValueError:
         return None, error_response("min_amount and max_amount must be numbers", 400)
-
-
-def build_tracker_from_database():
-    manager = ExpenseTracker()
-    all_expenses = get_all_expenses()
-    for expense in all_expenses:
-        expense_obj = create_expense_from_data(expense)
-        manager.add_expense(expense_obj)
-    return manager
 
 
 # Basic routes
@@ -220,16 +215,15 @@ def get_expense_by_id(expense_id):
 
 @app.route("/expenses/category/<category>")
 def expenses_by_category(category):
-    manager = build_tracker_from_database()
-    result = manager.get_expenses_by_category(category)
-    return jsonify(result)
+    return jsonify(get_expenses_by_category_from_db(category))
 
 
 @app.route("/expenses/date/<date>")
 def expenses_by_date(date):
-    manager = build_tracker_from_database()
-    result = manager.get_expenses_by_date(date)
-    return jsonify(result)
+    if not is_valid_date_format(date):
+        return error_response("Date must be in YYYY-MM-DD format", 400)
+
+    return jsonify(get_expenses_by_date_from_db(date))
 
 
 @app.route("/expenses/<int:expense_id>", methods=["DELETE"])

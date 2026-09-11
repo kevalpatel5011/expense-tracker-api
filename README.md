@@ -36,6 +36,7 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Filter, sort, and paginate expense listings directly in PostgreSQL
 * Calculate expense summaries using PostgreSQL aggregate queries
 * Generate monthly, yearly, and category reports directly in PostgreSQL
+* Retrieve expenses by category and exact date directly from PostgreSQL
 
 
 ## Project Structure
@@ -441,19 +442,19 @@ The automated test suite covers:
 * PostgreSQL category summaries and date-based category reports
 * Inclusive date ranges and leap-year boundaries
 * Case-insensitive category grouping and whitespace normalization
+* PostgreSQL category and exact-date expense lookups
 
 
 Current local test result:
 
 ```text
-Ran 132 tests
+Ran 137 tests
 
 OK
 ```
 
 ## Future Improvements
 
-* Move the remaining category and date lookup routes directly into SQL queries
 * Add user authentication and authorization
 * Add migration rollback tests to continuous integration
 * Deploy the Dockerized API to a production hosting platform
