@@ -7,6 +7,7 @@ info:
 servers:
   - url: http://127.0.0.1:5000
     description: Local development server
+security: []
 
 paths:
   /:
@@ -39,6 +40,39 @@ paths:
                     type: string
                   status:
                     type: string
+
+  /ready:
+    get:
+      summary: Check application readiness
+      description: Checks whether the API can connect to PostgreSQL.
+      operationId: getReadiness
+      responses:
+        "200":
+          description: Application and database are ready
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ready
+                  database:
+                    type: string
+                    example: connected
+        "503":
+          description: PostgreSQL is unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: unavailable
+                  database:
+                    type: string
+                    example: disconnected
 
   /expenses:
     get:
@@ -375,8 +409,7 @@ paths:
           content:
             application/json:
               schema:
-                schema:
-                  $ref: "#/components/schemas/ExpenseReport"
+                $ref: "#/components/schemas/ExpenseReport"
 
 components:
   schemas:

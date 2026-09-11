@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 
+import psycopg
 from alembic import command
 from alembic.config import Config
 
@@ -80,6 +81,32 @@ class TestApp(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data["status"], "ok")
         self.assertEqual(data["message"], "Expense Tracker API is running")
+
+    @patch("app.check_postgres_connection")
+    def test_readiness_when_database_connected(self, check_connection):
+        response = self.client.get("/ready")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {
+            "status": "ready",
+            "database": "connected",
+        })
+        check_connection.assert_called_once_with()
+
+
+    @patch("app.check_postgres_connection")
+    def test_readiness_when_database_unavailable(self, check_connection):
+        check_connection.side_effect = psycopg.OperationalError(
+            "Database unavailable"
+        )
+
+        response = self.client.get("/ready")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.get_json(), {
+            "status": "unavailable",
+            "database": "disconnected",
+        })
 
     def test_get_expenses(self):
         response = self.client.get("/expenses")

@@ -40,6 +40,13 @@ def get_postgres_connection():
     return get_postgres_pool().connection()
 
 
+def check_postgres_connection():
+    with get_postgres_connection() as connection:
+        connection.execute("SELECT 1").fetchone()
+
+    return True
+
+
 def close_postgres_pool():
     if _postgres_pool is not None:
         _postgres_pool.close()

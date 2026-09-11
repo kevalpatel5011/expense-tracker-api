@@ -1,5 +1,6 @@
 import psycopg
 from flask import Flask, jsonify, render_template, request, send_from_directory
+from psycopg_pool import PoolTimeout
 
 from expense_utils import (
     ALLOWED_SORT_FIELDS,
@@ -12,6 +13,7 @@ from expense_utils import (
     validate_allowed_fields,
     validate_required_fields,
 )
+from postgres_database import check_postgres_connection
 from postgres_expense_repository import (
     delete_expense_by_id as delete_expense_by_id_from_db,
 )
@@ -98,6 +100,22 @@ def health():
         "status": "ok",
         "message": "Expense Tracker API is running",
 })
+
+
+@app.route("/ready")
+def readiness():
+    try:
+        check_postgres_connection()
+    except (psycopg.Error, PoolTimeout):
+        return jsonify({
+            "status": "unavailable",
+            "database": "disconnected",
+        }), 503
+
+    return jsonify({
+        "status": "ready",
+        "database": "connected",
+    }), 200
 
 
 # Expense routes
