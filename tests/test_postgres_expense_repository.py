@@ -9,7 +9,15 @@ from postgres_database import get_postgres_connection
 from postgres_expense_repository import (
     delete_expense_by_id,
     get_all_expenses,
+    get_category_report,
+    get_category_summary,
     get_expense_by_id,
+    get_expense_report,
+    get_expense_summary,
+    get_monthly_category_report,
+    get_monthly_report,
+    get_yearly_category_report,
+    get_yearly_report,
     insert_expense,
     search_expenses,
     update_expense_by_id,
@@ -444,6 +452,307 @@ class TestPostgresExpenseRepository(unittest.TestCase):
         result = search_expenses(offset=2)
 
         self.assertEqual([expense["expense_id"] for expense in result],[102, 103])
+
+    def test_get_expense_summary(self):
+        insert_expense({
+            "expense_id": 100,
+            "title": "rent",
+            "amount": 2200,
+            "category": "housing",
+            "date": "2026-09-01",
+        })
+        insert_expense({
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 200,
+            "category": "utility",
+            "date": "2026-09-02",
+        })
+        insert_expense({
+            "expense_id": 110,
+            "title": "coffee",
+            "amount": 100,
+            "category": "food",
+            "date": "2026-09-03",
+        })
+
+        result = get_expense_summary()
+
+        self.assertEqual(result["count"], 3)
+        self.assertEqual(result["total_amount"], 2500)
+        self.assertAlmostEqual(result["average_amount"], 833.333333, places=5)
+        self.assertEqual(result["highest_expense"]["expense_id"], 100)
+        self.assertEqual(result["lowest_expense"]["expense_id"], 110)
+
+
+    def test_get_expense_summary_with_no_expenses(self):
+        result = get_expense_summary()
+
+        self.assertEqual(result["count"], 0)
+        self.assertEqual(result["total_amount"], 0)
+        self.assertEqual(result["average_amount"], 0)
+        self.assertIsNone(result["highest_expense"])
+        self.assertIsNone(result["lowest_expense"])
+
+    def test_get_category_summary(self):
+        insert_expense({
+            "expense_id": 100,
+            "title": "rent",
+            "amount": 2200,
+            "category": "Housing",
+            "date": "2026-09-01",
+        })
+        insert_expense({
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 200,
+            "category": "utility",
+            "date": "2026-09-02",
+        })
+        insert_expense({
+            "expense_id": 110,
+            "title": "tax",
+            "amount": 100,
+            "category": "housing",
+            "date": "2026-09-03",
+        })
+
+        result = get_category_summary()
+
+        self.assertEqual(result["housing"]["count"], 2)
+        self.assertEqual(result["housing"]["total_amount"], 2300)
+        self.assertEqual(result["utility"]["count"], 1)
+        self.assertEqual(result["utility"]["total_amount"], 200)
+
+
+    def test_get_category_summary_with_no_expenses(self):
+        result = get_category_summary()
+
+        self.assertEqual(result, {})
+
+    def test_get_expense_report_filters_by_inclusive_date_range(self):
+        insert_expense({
+            "expense_id": 100,
+            "title": "rent",
+            "amount": 50,
+            "category": "Housing",
+            "date": "2026-08-31",
+        })
+        insert_expense({
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 100,
+            "category": "utility",
+            "date": "2026-09-01",
+        })
+        insert_expense({
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200,
+            "category": "housing",
+            "date": "2026-09-30",
+        })
+        insert_expense({
+            "expense_id": 103,
+            "title": "tax",
+            "amount": 400,
+            "category": "housing",
+            "date": "2026-10-01",
+        })
+        result = get_expense_report("2026-09-01", "2026-09-30")
+
+        self.assertEqual(result["count"], 2)
+        self.assertEqual(result["total_amount"], 300)
+        self.assertIsInstance(result["total_amount"], float)
+        self.assertEqual(
+            [expense["expense_id"] for expense in result["expenses"]],
+            [101, 102],
+        )
+
+    def test_get_expense_report_with_no_matches(self):
+        insert_expense({
+            "expense_id": 100,
+            "title": "rent",
+            "amount": 50,
+            "category": "Housing",
+            "date": "2026-09-15",
+        })
+        result = get_expense_report("2025-01-01", "2025-01-30")
+        self.assertEqual(result, {})
+
+    def test_get_yearly_report_filters_by_year(self):
+        insert_expense({
+            "expense_id": 100,
+            "title": "rent",
+            "amount": 50,
+            "category": "Housing",
+            "date": "2025-12-31",
+        })
+        insert_expense({
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 100,
+            "category": "utility",
+            "date": "2026-01-01",
+        })
+        insert_expense({
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200,
+            "category": "housing",
+            "date": "2026-12-31",
+        })
+        insert_expense({
+            "expense_id": 103,
+            "title": "tax",
+            "amount": 400,
+            "category": "housing",
+            "date": "2027-01-01",
+        })
+        result = get_yearly_report(2026)
+
+        self.assertEqual(result["count"], 2)
+        self.assertEqual(result["total_amount"], 300)
+        self.assertEqual(
+            [expense["expense_id"] for expense in result["expenses"]],
+            [101, 102],
+        )
+
+    def test_get_monthly_report_includes_leap_day(self):
+        insert_expense({
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200,
+            "category": "housing",
+            "date": "2028-02-29",
+        })
+        insert_expense({
+            "expense_id": 103,
+            "title": "tax",
+            "amount": 400,
+            "category": "housing",
+            "date": "2028-03-01",
+        })
+        result = get_monthly_report(2028, 2)
+
+        self.assertEqual(result["count"], 1)
+        self.assertEqual(result["total_amount"], 200)
+        self.assertEqual(
+            [expense["expense_id"] for expense in result["expenses"]],
+            [102],
+        )
+
+    def test_get_category_report_groups_expenses(self):
+        insert_expense({
+            "expense_id": 100,
+            "title": "rent",
+            "amount": 100,
+            "category": "Housing",
+            "date": "2026-09-30",
+        })
+        insert_expense({
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 50,
+            "category": "utility",
+            "date": "2026-09-01",
+        })
+        insert_expense({
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200,
+            "category": " housing ",
+            "date": "2026-09-13",
+        })
+        insert_expense({
+            "expense_id": 103,
+            "title": "tax",
+            "amount": 400,
+            "category": "housing",
+            "date": "2026-10-01",
+        })
+        result = get_category_report("2026-09-01", "2026-09-30")
+
+        self.assertEqual(result["housing"]["count"], 2)
+        self.assertEqual(result["housing"]["total_amount"], 300)
+        self.assertEqual(result["utility"]["count"], 1)
+        self.assertEqual(result["utility"]["total_amount"], 50)
+        self.assertIsInstance(result["housing"]["total_amount"], float)
+        self.assertEqual(
+            [expense["expense_id"] for expense in result["housing"]["expenses"]],
+            [100, 102],
+        )
+        self.assertEqual(
+            [expense["expense_id"] for expense in result["utility"]["expenses"]],
+            [101],
+        )
+
+    def test_get_category_report_with_no_matches(self):
+        insert_expense({
+            "expense_id": 103,
+            "title": "tax",
+            "amount": 400,
+            "category": "housing",
+            "date": "2025-09-01",
+        })
+        result = get_category_report("2026-09-01", "2026-09-30")
+        self.assertEqual(result, {})
+
+    def test_get_monthly_category_report_includes_leap_day(self):
+        insert_expense({
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200,
+            "category": " housing ",
+            "date": "2028-02-29",
+        })
+        insert_expense({
+            "expense_id": 103,
+            "title": "tax",
+            "amount": 400,
+            "category": "housing",
+            "date": "2028-03-01",
+        })
+        result = get_monthly_category_report(2028, 2)
+        self.assertEqual(
+            [expense["expense_id"] for expense in result["housing"]["expenses"]],
+            [102],
+        )
+
+    def test_get_yearly_category_report_filters_by_year(self):
+        insert_expense({
+            "expense_id": 100,
+            "title": "rent",
+            "amount": 50,
+            "category": "utility",
+            "date": "2025-12-31",
+        })
+        insert_expense({
+            "expense_id": 101,
+            "title": "bill",
+            "amount": 100,
+            "category": "Housing",
+            "date": "2026-01-01",
+        })
+        insert_expense({
+            "expense_id": 102,
+            "title": "tax",
+            "amount": 200,
+            "category": "housing",
+            "date": "2026-12-31",
+        })
+        insert_expense({
+            "expense_id": 103,
+            "title": "tax",
+            "amount": 400,
+            "category": "housing",
+            "date": "2027-01-01",
+        })
+        result = get_yearly_category_report(2026)
+        self.assertEqual(
+            [expense["expense_id"] for expense in result["housing"]["expenses"]],
+            [101, 102],
+        )
 
 if __name__ == "__main__":
     unittest.main()

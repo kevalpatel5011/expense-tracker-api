@@ -34,6 +34,9 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Document the API contract with OpenAPI 3.2
 * Users can browse and test the API through Swagger UI
 * Filter, sort, and paginate expense listings directly in PostgreSQL
+* Calculate expense summaries using PostgreSQL aggregate queries
+* Generate monthly, yearly, and category reports directly in PostgreSQL
+
 
 ## Project Structure
 
@@ -80,6 +83,8 @@ expense-tracker-api/
 ```
 
 The Flask application uses PostgreSQL as its active database. Alembic migration files are the single source of truth for the PostgreSQL schema.
+
+Expense filtering, sorting, pagination, summaries, and reports are executed directly in PostgreSQL through the repository layer.
 
 The SQLite repository and JSON-to-SQLite migration files are retained as previous implementation examples and for comparison with PostgreSQL. The generated `expenses.db` file is ignored by Git.
 
@@ -431,18 +436,24 @@ The automated test suite covers:
 * JSON-to-SQLite migration behavior
 * OpenAPI specification and Swagger UI documentation routes
 * PostgreSQL expense filtering, sorting, and pagination
+* PostgreSQL expense summary calculations
+* PostgreSQL monthly and yearly expense reports
+* PostgreSQL category summaries and date-based category reports
+* Inclusive date ranges and leap-year boundaries
+* Case-insensitive category grouping and whitespace normalization
+
 
 Current local test result:
 
 ```text
-Ran 120 tests
+Ran 132 tests
 
 OK
 ```
 
 ## Future Improvements
 
-* Move expense reports into PostgreSQL aggregate queries
+* Move the remaining category and date lookup routes directly into SQL queries
 * Add user authentication and authorization
 * Add migration rollback tests to continuous integration
 * Deploy the Dockerized API to a production hosting platform
