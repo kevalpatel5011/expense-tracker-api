@@ -357,6 +357,24 @@ Check API health:
 curl http://127.0.0.1:5000/health
 ```
 
+Check whether the API and PostgreSQL are ready:
+
+```bash
+curl http://127.0.0.1:5000/ready
+```
+
+
+Then verify the image:
+
+```bash
+docker build -t expense-tracker-api:readiness .
+docker inspect --format='{{json .Config.Healthcheck}}' \
+expense-tracker-api:readiness
+
+git diff --check
+git status --short
+```
+
 Get all expenses:
 
 ```bash
