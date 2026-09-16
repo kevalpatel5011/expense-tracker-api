@@ -274,12 +274,41 @@ When finished, remove the password from the current shell:
 unset POSTGRES_PASSWORD
 ```
 
-## Run with Docker
+## Run with Docker Compose
 
 Create the local environment file:
 
 ```bash
 cp .env.example .env
+```
+
+Open `.env` and replace `replace_with_your_password` with your PostgreSQL password.
+
+Build the images and start PostgreSQL, run the database migrations, and start the API:
+
+```bash
+docker compose up --build -d
+```
+
+Check the container status and API readiness:
+
+```bash
+docker compose ps
+curl http://127.0.0.1:5000/ready
+```
+
+Stop and remove the containers and network:
+
+```bash
+docker compose down
+```
+
+`docker compose down` preserves the PostgreSQL data stored in the named volume.
+
+To permanently delete the PostgreSQL volume and all its stored data, run:
+
+```bash
+docker compose down --volumes
 ```
 
 ## Run Tests
@@ -361,18 +390,6 @@ Check whether the API and PostgreSQL are ready:
 
 ```bash
 curl http://127.0.0.1:5000/ready
-```
-
-
-Then verify the image:
-
-```bash
-docker build -t expense-tracker-api:readiness .
-docker inspect --format='{{json .Config.Healthcheck}}' \
-expense-tracker-api:readiness
-
-git diff --check
-git status --short
 ```
 
 Get all expenses:
