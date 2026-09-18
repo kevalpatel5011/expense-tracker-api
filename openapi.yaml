@@ -150,6 +150,10 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Expense"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
     post:
       summary: Create an expense
@@ -171,6 +175,10 @@ paths:
           description: Invalid request data
         "409":
           description: Expense ID already exists
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
   /expenses/{expense_id}:
     parameters:
@@ -192,6 +200,10 @@ paths:
                   $ref: "#/components/schemas/Expense"
         "404":
           description: Expense not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
     delete:
       summary: Delete an expense
@@ -201,6 +213,10 @@ paths:
           description: Expense deleted successfully
         "404":
           description: Expense not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
     patch:
       summary: Partially update an expense
@@ -222,6 +238,10 @@ paths:
           description: Invalid update data
         "404":
           description: Expense not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
     put:
       summary: Replace an expense
@@ -243,6 +263,10 @@ paths:
           description: Invalid expense data
         "404":
           description: Expense not found
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
   /expenses/summary:
     get:
@@ -255,6 +279,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExpenseSummary"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
   /expenses/category/{category}:
     get:
@@ -275,6 +303,10 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Expense"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
   /expenses/date/{date}:
     get:
@@ -298,6 +330,10 @@ paths:
                   $ref: "#/components/schemas/Expense"
         "400":
           description: Date must be in YYYY-MM-DD format
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
   /reports/categories:
     get:
@@ -312,6 +348,10 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: "#/components/schemas/CategorySummaryItem"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
   /reports/categories/{year}/{month}:
     get:
@@ -341,6 +381,10 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: "#/components/schemas/CategoryReportItem"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
   /reports/categories/{year}:
     get:
@@ -361,6 +405,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CategoryReportItem"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
   /reports/monthly/{year}/{month}:
     get:
@@ -390,6 +438,10 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: "#/components/schemas/CategoryReportItem"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
   /reports/yearly/{year}:
     get:
@@ -410,6 +462,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExpenseReport"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+        "503":
+          $ref: "#/components/responses/DatabaseUnavailable"
 
 components:
   schemas:
@@ -533,3 +589,32 @@ components:
         - $ref: "#/components/schemas/CategoryReportItem"
         - type: object
           maxProperties: 0
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: A safe error message describing the request failure
+
+  responses:
+    InternalServerError:
+      description: An unexpected server error occurred
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Internal server error
+
+    DatabaseUnavailable:
+      description: PostgreSQL or its connection pool is temporarily unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: Database temporarily unavailable

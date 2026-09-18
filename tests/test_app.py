@@ -4,6 +4,7 @@ from unittest.mock import patch
 import psycopg
 from alembic import command
 from alembic.config import Config
+from psycopg_pool import PoolTimeout
 
 from app import app
 from postgres_database import get_postgres_connection
@@ -653,6 +654,61 @@ class TestApp(unittest.TestCase):
         data = response.get_data(as_text=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(data, "Expense Tracker API is running")
+
+    def test_unknown_route_returns_json_404(self):
+        response = self.client.get("/missing")
+        data = response.get_json()
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(data, {"error": "Resource not found"})
+
+    def test_unsupported_method_returns_json_405(self):
+        response = self.client.post("/health")
+        data = response.get_json()
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(data, {"error": "Method not allowed"})
+
+    @patch("app.search_expenses")
+    def test_database_error_returns_json_503(self, mock_search_expenses):
+        mock_search_expenses.side_effect = psycopg.OperationalError(
+            "database unavailable"
+        )
+
+        response = self.client.get("/expenses")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.get_json(),
+            {"error": "Database temporarily unavailable"},
+        )
+
+    @patch("app.get_expense_summary_from_db")
+    def test_pool_timeout_returns_json_503(self, mock_search_expenses):
+        mock_search_expenses.side_effect = PoolTimeout(
+            "Pooltime out"
+        )
+
+        response = self.client.get("/expenses/summary")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.get_json(),
+            {"error": "Database temporarily unavailable"},
+        )
+
+    @patch.dict(app.config, {"PROPAGATE_EXCEPTIONS": False})
+    @patch("app.get_expense_summary_from_db")
+    def test_unexpected_error_returns_json_500(self, mock_get_summary,):
+        mock_get_summary.side_effect = RuntimeError(
+            "unexpected failure"
+        )
+
+        response = self.client.get("/expenses/summary")
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.get_json(),
+            {"error": "Internal server error"},
+        )
 
 
 class TestDocumentationRoutes(unittest.TestCase):

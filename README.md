@@ -27,6 +27,7 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Apply migrations and run quality checks through GitHub Actions
 * Reuse PostgreSQL connections through a connection pool
 * Package and run the API with Docker
+* Return consistent JSON errors and log unexpected server and database failures
 * Run Flask, Alembic, and PostgreSQL with Docker Compose
 * Serve Flask through the production Gunicorn WSGI server
 * Run containers with a non-root user
@@ -434,6 +435,15 @@ curl "http://127.0.0.1:5000/expenses?min_amount=100&max_amount=2000"
 | GET    | `/docs`                              | View and test the API through Swagger UI                    |
 | GET    | `/openapi.yaml`                      | Retrieve the raw OpenAPI specification                      |
 
+## API Error Responses
+
+The API returns errors as JSON with a consistent structure:
+
+```json
+{
+  "error": "Error message"
+}
+
 ## Create an Expense
 
 ```bash
@@ -474,6 +484,7 @@ The automated test suite covers:
 
 * Core expense tracker logic
 * Flask API routes
+* JSON responses for 404, 405, 500, database, and connection-pool errors
 * SQLite repository behavior
 * PostgreSQL repository CRUD operations
 * PostgreSQL database constraints
@@ -496,7 +507,7 @@ The automated test suite covers:
 Current local test result:
 
 ```text
-Ran 142 tests
+Ran 147 tests
 
 OK
 ```
