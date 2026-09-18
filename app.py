@@ -74,6 +74,42 @@ def parse_amount(value):
         return None, error_response("min_amount and max_amount must be numbers", 400)
 
 
+@app.errorhandler(psycopg.Error)
+@app.errorhandler(PoolTimeout)
+def handle_database_unavailable(error):
+    app.logger.error(
+        "Database operation failed",
+        exc_info=(type(error), error, error.__traceback__),
+    )
+    return error_response("Database temporarily unavailable", 503)
+
+
+@app.errorhandler(404)
+def handle_not_found(_error):
+    return error_response("Resource not found", 404)
+
+
+@app.errorhandler(405)
+def handle_method_not_allowed(_error):
+    return error_response("Method not allowed", 405)
+
+
+@app.errorhandler(500)
+def handle_internal_server_error(error):
+    original_error = getattr(error, "original_exception", error)
+
+    app.logger.error(
+        "Unexpected server error",
+        exc_info=(
+            type(original_error),
+            original_error,
+            original_error.__traceback__,
+        ),
+    )
+
+    return error_response("Internal server error", 500)
+
+
 # Basic routes
 @app.route("/")
 def home():
