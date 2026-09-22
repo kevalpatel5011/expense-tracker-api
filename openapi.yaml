@@ -2,7 +2,10 @@ openapi: 3.2.0
 info:
   title: Expense Tracker API
   version: 1.0.0
-  description: API for managing expenses
+  description: >
+    API for managing expenses. Every response includes an
+    `X-Request-ID` header that clients can use to match API responses
+    with the corresponding server logs.
 
 servers:
   - url: http://127.0.0.1:5000

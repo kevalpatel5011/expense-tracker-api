@@ -28,6 +28,7 @@ This project demonstrates backend API development using Python, Flask, PostgreSQ
 * Reuse PostgreSQL connections through a connection pool
 * Package and run the API with Docker
 * Return consistent JSON errors and log unexpected server and database failures
+* Trace every API request with a unique request ID, completion timing, and correlated error logs
 * Run Flask, Alembic, and PostgreSQL with Docker Compose
 * Serve Flask through the production Gunicorn WSGI server
 * Run containers with a non-root user
@@ -443,6 +444,20 @@ The API returns errors as JSON with a consistent structure:
 {
   "error": "Error message"
 }
+```
+
+## Request Tracing
+
+Every API request receives a unique UUID that can be used to trace the request through the application.
+
+The request ID is returned in the `X-Request-ID` response header:
+
+```text
+X-Request-ID: 550e8400-e29b-41d4-a716-446655440000
+```
+Completed-request logs include the request ID, HTTP method, request path, response status code, and duration in milliseconds.
+
+Database failures and unexpected server errors are logged with the same request ID. This allows a client response to be matched with the corresponding server logs during troubleshooting.
 
 ## Create an Expense
 
@@ -502,12 +517,12 @@ The automated test suite covers:
 * Case-insensitive category grouping and whitespace normalization
 * PostgreSQL category and exact-date expense lookups
 * PostgreSQL index creation and migration rollback
-
+* Request ID generation, UUID validation, uniqueness across requests, completion logging, and error-log correlation
 
 Current local test result:
 
 ```text
-Ran 147 tests
+Ran 151 tests
 
 OK
 ```
