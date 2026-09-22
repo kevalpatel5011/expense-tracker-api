@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import patch
+from uuid import UUID
 
 import psycopg
 from alembic import command
@@ -701,14 +702,67 @@ class TestApp(unittest.TestCase):
         mock_get_summary.side_effect = RuntimeError(
             "unexpected failure"
         )
+        with patch.object(app.logger, "error") as mock_error:
+            response = self.client.get("/expenses/summary")
+            self.assertEqual(response.status_code, 500)
+            self.assertEqual(
+                response.get_json(),
+                {"error": "Internal server error"},
+            )
+            self.assertGreaterEqual(mock_error.call_count, 1)
+            args = mock_error.call_args.args
+            kwargs = mock_error.call_args.kwargs
+            request_id = response.headers.get("X-Request-ID")
+            self.assertIsNotNone(request_id)
+            self.assertIn("Unexpected server error", args[0])
+            self.assertEqual(args[1], request_id)
+            self.assertIn("exc_info", kwargs)
 
-        response = self.client.get("/expenses/summary")
+    def test_response_contains_request_id(self):
+        response = self.client.get("/health")
+        request_id = response.headers.get("X-Request-ID")
+        self.assertIsNotNone(request_id)
+        parsed_id = UUID(request_id)
+        str_id = str(parsed_id)
+        self.assertEqual(str_id, request_id)
 
-        self.assertEqual(response.status_code, 500)
-        self.assertEqual(
-            response.get_json(),
-            {"error": "Internal server error"},
+    def test_separate_requests_receive_different_ids(self):
+        response_1 = self.client.get("/health")
+        response_2 = self.client.get("/health")
+        request_id_1 = response_1.headers.get("X-Request-ID")
+        request_id_2 = response_2.headers.get("X-Request-ID")
+        self.assertNotEqual(request_id_1, request_id_2)
+
+    def test_completed_request_is_logged(self):
+        with patch.object(app.logger, "info") as mock_info:
+            response = self.client.get('/health')
+            mock_info.assert_called_once()
+            args = mock_info.call_args.args
+            request_id = response.headers.get("X-Request-ID")
+            self.assertIsInstance(args[0], str)
+            self.assertIn("Request completed", args[0])
+            self.assertEqual(args[1], request_id)
+            self.assertEqual(args[2], "GET")
+            self.assertEqual(args[3], "/health")
+            self.assertEqual(args[4], 200)
+            self.assertGreaterEqual(args[5], 0)
+
+    @patch("app.search_expenses")
+    def test_database_error_log_uses_response_request_id(self, mock_search_expenses):
+        mock_search_expenses.side_effect = psycopg.OperationalError(
+            "database unavailable"
         )
+        with patch.object(app.logger, "error") as mock_error:
+            response = self.client.get("/expenses")
+            self.assertEqual(response.status_code, 503)
+            mock_error.assert_called_once()
+            args = mock_error.call_args.args
+            kwargs = mock_error.call_args.kwargs
+            request_id = response.headers.get("X-Request-ID")
+            self.assertIsNotNone(request_id)
+            self.assertIn("Database operation failed", args[0])
+            self.assertEqual(args[1], request_id)
+            self.assertIn("exc_info", kwargs)
 
 
 class TestDocumentationRoutes(unittest.TestCase):

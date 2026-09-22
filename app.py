@@ -1,5 +1,8 @@
+import time
+from uuid import uuid4
+
 import psycopg
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import Flask, g, jsonify, render_template, request, send_from_directory
 from psycopg_pool import PoolTimeout
 
 from expense_utils import (
@@ -53,6 +56,32 @@ from postgres_expense_repository import (
 app = Flask(__name__)
 
 
+@app.before_request
+def begin_request_tracking():
+    g.request_id = str(uuid4())
+    g.request_started_at = time.perf_counter()
+
+
+@app.after_request
+def finish_request_tracking(response):
+    duration_ms = (
+        time.perf_counter() - g.request_started_at
+    ) * 1000
+    response.headers["X-Request-ID"] = g.request_id
+    app.logger.info(
+    (
+        "Request completed request_id=%s method=%s "
+        "path=%s status=%s duration_ms=%.2f"
+    ),
+    g.request_id,
+    request.method,
+    request.path,
+    response.status_code,
+    duration_ms,
+    )
+    return response
+
+
 # Helper functions
 def error_response(message, status_code):
     return jsonify({
@@ -78,7 +107,8 @@ def parse_amount(value):
 @app.errorhandler(PoolTimeout)
 def handle_database_unavailable(error):
     app.logger.error(
-        "Database operation failed",
+        "Database operation failed request_id=%s",
+        g.request_id,
         exc_info=(type(error), error, error.__traceback__),
     )
     return error_response("Database temporarily unavailable", 503)
@@ -99,7 +129,8 @@ def handle_internal_server_error(error):
     original_error = getattr(error, "original_exception", error)
 
     app.logger.error(
-        "Unexpected server error",
+        "Unexpected server error request_id=%s",
+        g.request_id,
         exc_info=(
             type(original_error),
             original_error,
