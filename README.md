@@ -216,7 +216,7 @@ The default non-secret configuration is:
 | `POSTGRES_DATABASE` | `expense_tracker` |
 | `POSTGRES_USER`     | `expense_app`     |
 
-`POSTGRES_PASSWORD` does not have a default and must be supplied through the environment.
+`POSTGRES_PASSWORD` and `API_KEY` have no defaults and must be supplied through the environment. Put their real values in the git-ignored `.env` file; `.env.example` contains placeholders only. Never commit real credentials.
 
 ## Database Migrations
 
@@ -284,7 +284,7 @@ Create the local environment file:
 cp .env.example .env
 ```
 
-Open `.env` and replace `replace_with_your_password` with your PostgreSQL password.
+Open `.env` and replace both placeholders: set `POSTGRES_PASSWORD` to your PostgreSQL password and `API_KEY` to a secret API key. Docker Compose passes the key to the API container.
 
 Build the images and start PostgreSQL, run the database migrations, and start the API:
 
@@ -380,6 +380,21 @@ Validate the OpenAPI specification with:
 python3 -m openapi_spec_validator openapi.yaml
 ```
 
+## API Key Authentication
+
+All `/expenses` and `/reports` routes require an `X-API-Key` request header. The `/`, `/health`, `/ready`, `/docs`, and `/openapi.yaml` routes are public.
+
+A missing or incorrect key returns `401`. If the server has no `API_KEY` configured, protected routes return `503`.
+
+For the shell examples below, load your local `.env` first:
+
+```bash
+set -a
+source .env
+set +a
+```
+Docker Compose reads `.env` for containers, but it does not automatically set `$API_KEY` in your terminal.
+
 ## Example API Requests
 
 Check API health:
@@ -397,19 +412,19 @@ curl http://127.0.0.1:5000/ready
 Get all expenses:
 
 ```bash
-curl http://127.0.0.1:5000/expenses
+curl -H "X-API-Key: $API_KEY" http://127.0.0.1:5000/expenses
 ```
 
 Filter by category:
 
 ```bash
-curl "http://127.0.0.1:5000/expenses?category=housing"
+curl -H "X-API-Key: $API_KEY" "http://127.0.0.1:5000/expenses?category=housing"
 ```
 
 Filter by amount range:
 
 ```bash
-curl "http://127.0.0.1:5000/expenses?min_amount=100&max_amount=2000"
+curl -H "X-API-Key: $API_KEY" "http://127.0.0.1:5000/expenses?min_amount=100&max_amount=2000"
 ```
 
 ## API Endpoints
@@ -463,6 +478,7 @@ Database failures and unexpected server errors are logged with the same request 
 
 ```bash
 curl -X POST http://127.0.0.1:5000/expenses \
+  -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"expense_id":120,"title":"internet","amount":80,"category":"utility","date":"2026-06-22"}'
 ```
@@ -483,6 +499,7 @@ Example response:
 
 ```bash
 curl -X PATCH http://127.0.0.1:5000/expenses/120 \
+  -H "X-API-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"amount":85}'
 ```
@@ -490,7 +507,7 @@ curl -X PATCH http://127.0.0.1:5000/expenses/120 \
 ## Delete an Expense
 
 ```bash
-curl -X DELETE http://127.0.0.1:5000/expenses/120
+curl -X DELETE -H "X-API-Key: $API_KEY" http://127.0.0.1:5000/expenses/120
 ```
 
 ## Test Status
@@ -522,12 +539,12 @@ The automated test suite covers:
 Current local test result:
 
 ```text
-Ran 151 tests
+Ran 157 tests
 
 OK
 ```
 
 ## Future Improvements
 
-* Add user authentication and authorization
+* Add individual user accounts, expense ownership, and role-based permissions
 * Deploy the Dockerized API to a production hosting platform

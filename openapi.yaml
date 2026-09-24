@@ -10,11 +10,14 @@ info:
 servers:
   - url: http://127.0.0.1:5000
     description: Local development server
-security: []
+
+security:
+  - ApiKeyAuth: []
 
 paths:
   /:
     get:
+      security: []
       summary: Get API welcome message
       operationId: getHome
       responses:
@@ -26,6 +29,7 @@ paths:
                 type: string
   /health:
     get:
+      security: []
       summary: Check API health
       operationId: getHealth
       responses:
@@ -46,6 +50,7 @@ paths:
 
   /ready:
     get:
+      security: []
       summary: Check application readiness
       description: Checks whether the API can connect to PostgreSQL.
       operationId: getReadiness
@@ -153,6 +158,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Expense"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -176,6 +183,8 @@ paths:
                   $ref: "#/components/schemas/Expense"
         "400":
           description: Invalid request data
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "409":
           description: Expense ID already exists
         "500":
@@ -201,6 +210,8 @@ paths:
             application/json:
                 schema:
                   $ref: "#/components/schemas/Expense"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           description: Expense not found
         "500":
@@ -214,6 +225,8 @@ paths:
       responses:
         "200":
           description: Expense deleted successfully
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           description: Expense not found
         "500":
@@ -239,6 +252,8 @@ paths:
                   $ref: "#/components/schemas/Expense"
         "400":
           description: Invalid update data
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           description: Expense not found
         "500":
@@ -264,6 +279,8 @@ paths:
                   $ref: "#/components/schemas/Expense"
         "400":
           description: Invalid expense data
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           description: Expense not found
         "500":
@@ -282,6 +299,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExpenseSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -306,6 +325,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Expense"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -333,6 +354,8 @@ paths:
                   $ref: "#/components/schemas/Expense"
         "400":
           description: Date must be in YYYY-MM-DD format
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -351,6 +374,8 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: "#/components/schemas/CategorySummaryItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -384,6 +409,8 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: "#/components/schemas/CategoryReportItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -408,6 +435,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CategoryReportItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -441,6 +470,8 @@ paths:
                 type: object
                 additionalProperties:
                   $ref: "#/components/schemas/CategoryReportItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
@@ -465,12 +496,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ExpenseReport"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalServerError"
         "503":
           $ref: "#/components/responses/DatabaseUnavailable"
 
 components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
   schemas:
     Expense:
       type: object
@@ -619,5 +657,19 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            databaseUnavailable:
+              value:
+                error: Database temporarily unavailable
+            authenticationNotConfigured:
+              value:
+                error: API authentication is not configured
+
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
           example:
-            error: Database temporarily unavailable
+            error: Invalid or missing API key
