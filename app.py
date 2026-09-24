@@ -1,3 +1,4 @@
+import hmac
 import time
 from uuid import uuid4
 
@@ -5,6 +6,7 @@ import psycopg
 from flask import Flask, g, jsonify, render_template, request, send_from_directory
 from psycopg_pool import PoolTimeout
 
+from config import API_KEY
 from expense_utils import (
     ALLOWED_SORT_FIELDS,
     ALLOWED_UPDATE_FIELDS,
@@ -54,6 +56,8 @@ from postgres_expense_repository import (
 )
 
 app = Flask(__name__)
+
+app.config["API_KEY"] = API_KEY
 
 
 @app.before_request
@@ -139,6 +143,25 @@ def handle_internal_server_error(error):
     )
 
     return error_response("Internal server error", 500)
+
+
+def is_protected_path(path):
+    return path in {"/expenses", "/reports"} or path.startswith(
+        ("/expenses/", "/reports/")
+    )
+
+
+@app.before_request
+def require_api_key():
+    if not is_protected_path(request.path):
+        return None
+    configured_key = app.config.get("API_KEY")
+    if not configured_key:
+        return error_response("API authentication is not configured", 503)
+    provided_key = request.headers.get("X-API-Key")
+    if not provided_key or not hmac.compare_digest(provided_key, configured_key):
+        return error_response("Invalid or missing API key", 401)
+    return None
 
 
 # Basic routes

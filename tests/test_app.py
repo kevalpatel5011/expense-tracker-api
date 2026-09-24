@@ -15,6 +15,10 @@ from postgres_expense_repository import insert_expense
 class TestApp(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
+        self.unauthenticated_client = app.test_client()
+        self.original_api_key = app.config.get("API_KEY")
+        app.config["API_KEY"] = "test_api_key"
+        self.client.environ_base["HTTP_X_API_KEY"] = "test_api_key"
         test_data = [
             {
                 "expense_id": 100,
@@ -59,6 +63,7 @@ class TestApp(unittest.TestCase):
     def tearDown(self):
         with get_postgres_connection() as connection:
             connection.execute("TRUNCATE TABLE expenses")
+        app.config["API_KEY"] = self.original_api_key
         self.config_database_patcher.stop()
         self.database_patcher.stop()
 
@@ -763,6 +768,67 @@ class TestApp(unittest.TestCase):
             self.assertIn("Database operation failed", args[0])
             self.assertEqual(args[1], request_id)
             self.assertIn("exc_info", kwargs)
+
+    def test_protected_route_rejects_missing_api_key(self):
+        response = self.unauthenticated_client.get("/expenses")
+        data = response.get_json()
+        request_id = response.headers.get("X-Request-ID")
+        self.assertIsNotNone(request_id)
+        self.assertEqual(response.status_code, 401)
+        result = {"error": "Invalid or missing API key"}
+        self.assertEqual(data, result)
+
+    def test_protected_route_rejects_incorrect_api_key(self):
+        response = self.unauthenticated_client.get(
+            "/expenses",
+            headers={"X-API-Key": "wrong_key"},
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.get_json(),
+            {"error": "Invalid or missing API key"}
+        )
+
+    def test_public_route_does_not_require_api_key(self):
+        response = self.unauthenticated_client.get("/health")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.get_json(),
+            {
+                "status": "ok",
+                "message": "Expense Tracker API is running",
+            },
+        )
+
+    @patch("app.search_expenses")
+    def test_protected_route_accepts_correct_api_key(self, mock_search_expenses):
+        mock_search_expenses.return_value = []
+        response = self.unauthenticated_client.get(
+            "/expenses",
+            headers={"X-API-Key": "test_api_key"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), [])
+        mock_search_expenses.assert_called_once()
+
+    def test_protected_route_returns_503_when_api_key_not_configured(self):
+        with patch.dict(app.config, {"API_KEY": None}):
+            response = self.unauthenticated_client.get("/expenses")
+            self.assertEqual(response.status_code, 503)
+            self.assertEqual(
+                response.get_json(),
+                {"error": "API authentication is not configured"}
+            )
+            request_id = response.headers.get("X-Request-ID")
+            self.assertIsNotNone(request_id)
+
+    def test_report_route_rejects_missing_api_key(self):
+        response = self.unauthenticated_client.get("/reports/categories")
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.get_json(),
+            {"error": "Invalid or missing API key"}
+        )
 
 
 class TestDocumentationRoutes(unittest.TestCase):
